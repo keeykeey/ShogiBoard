@@ -1,0 +1,5 @@
+bin
+engine/*
+!engine/.gitkeep
+obj
+tmp
