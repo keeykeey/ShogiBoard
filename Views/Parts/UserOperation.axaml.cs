@@ -4,9 +4,9 @@ using Avalonia.Markup.Xaml;
 
 namespace ShogiBoard.Views.Parts;
 
-public partial class EngineCommunicator : UserControl
+public partial class UserOperation : UserControl
 {
-    public EngineCommunicator()
+    public UserOperation()
     {
         InitializeComponent();
     }

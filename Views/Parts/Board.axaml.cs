@@ -17,7 +17,7 @@ public partial class Board : UserControl
         InitializeComponent();
     }
 
-    private void OnBoardPointerPressed(object? sender, PointerPressedEventArgs e)
+    private async void OnBoardPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (sender is not Image img) return;
         var pos = e.GetPosition(img);
@@ -34,6 +34,6 @@ public partial class Board : UserControl
         if (col < 0 || col > 8 || row < 0 || row > 8) return;
 
         if (DataContext is GameViewModel vm)
-            vm.ClickBoard(col, row);
+            await vm.ClickBoard(col, row);
     }
 }

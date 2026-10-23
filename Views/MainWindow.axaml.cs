@@ -10,9 +10,18 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         Closed += OnCloseMainWindow;
+        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
     }
 
     private void OnCloseMainWindow(object? sender, EventArgs arg)
+    {
+        if (DataContext is MainViewModel vm)
+        {
+            vm.GameViewModel.KillEngine();
+        }
+    }
+
+    private void OnUnhandledException(object? sender, EventArgs arg)
     {
         if (DataContext is MainViewModel vm)
         {
