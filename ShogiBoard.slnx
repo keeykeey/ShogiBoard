@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ShogiBoard/ShogiBoard.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ShogiBoard.Tests/ShogiBoard.Tests.csproj" />
+  </Folder>
+</Solution>

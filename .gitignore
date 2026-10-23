@@ -1,5 +1,5 @@
 bin
-engine/*
-!engine/.gitkeep
+src/ShogiBoard/engine/*
+!src/ShogiBoard/engine/.gitkeep
 obj
 tmp
