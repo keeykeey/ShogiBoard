@@ -170,4 +170,3 @@ public partial class GameViewModel(IEngineCommunicationService ecs, IGameService
         MoveFrom = null;
     }
 }
-
