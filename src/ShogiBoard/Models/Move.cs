@@ -10,10 +10,11 @@ public struct Move
     public bool DoPromote { get; } = false;
     private string DoPromoteChar { get; set; } = "";
 
-    public Move(IPosition moveFrom, Tile moveTo)
+    public Move(IPosition moveFrom, Tile moveTo, bool doPromote = false)
     {
         MoveFrom = moveFrom;
         MoveTo = moveTo;
+        DoPromote = doPromote;
     }
 
     public Move(string position)

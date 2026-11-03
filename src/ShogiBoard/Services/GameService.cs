@@ -14,6 +14,8 @@ public interface IGameService
 public class GameService : IGameService
 {
     private const string startPos9Dim = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL";
+    private int BlackPromotionLine { get; set; } = 3;
+    private int WhitePromotionLine { get; set; } = 7;
 
     public void Init9DimBoardData(GameState gameState)
     {
@@ -131,17 +133,23 @@ public class GameService : IGameService
     {
         return ch switch
         {
-            'p' or 'l' or 'n' or 's' or 'g' or 'k' or 'b' or 'r'  => true,
-            'P' or 'L' or 'N' or 'S' or 'G' or 'K' or 'B' or 'R'  => true,
+            'p' or 'l' or 'n' or 's' or 'g' or 'k' or 'b' or 'r' => true,
+            'P' or 'L' or 'N' or 'S' or 'G' or 'K' or 'B' or 'R' => true,
             _ => false
         };
+    }
+
+    public void SetPromotionLine(int bpl, int wpl)
+    {
+        BlackPromotionLine = bpl;
+        WhitePromotionLine = wpl;
     }
 
     public bool CanPromote(int destTileRank, bool blackCanMovePiece)
     {
         bool canPromote =
-            (blackCanMovePiece && (destTileRank <= 3))
-            || (!blackCanMovePiece && (7 <= destTileRank));
+            (blackCanMovePiece && (destTileRank <= BlackPromotionLine))
+            || (!blackCanMovePiece && (WhitePromotionLine <= destTileRank));
 
         return canPromote;
     }

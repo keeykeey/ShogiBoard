@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -110,7 +109,10 @@ public partial class GameViewModel(IEngineCommunicationService ecs, IGameService
         {
             if (from.Equals(pos)) return;
 
-            var move = new Move(from, pos);
+            bool canPlayerPromote = GameService.CanPromote(from.Ranks, GameState.BlackCanMovePiece);
+            // TODO let player to choose if promote or not via UI.
+            bool playerDoPromote = canPlayerPromote;
+            var move = new Move(from, pos, playerDoPromote);
 
             if (!GameService.IsValidMove(from, pos))
             {
@@ -119,8 +121,7 @@ public partial class GameViewModel(IEngineCommunicationService ecs, IGameService
             }
 
             GameState.Moves.Add(move);
-            // TODO: Check CanPromote
-            GameService.BoardDataNext(move.MoveFrom, move.MoveTo, false, GameState);
+            GameService.BoardDataNext(move.MoveFrom, move.MoveTo, move.DoPromote, GameState);
             // TODO: Draw board
             for (int r = 0; r < 9; ++r)
             {
@@ -156,8 +157,7 @@ public partial class GameViewModel(IEngineCommunicationService ecs, IGameService
                         GameState.Moves.Add(bm);
                         GameState.BlackCanMovePiece = !GameState.BlackCanMovePiece;
                         Console.WriteLine(bm);
-                        // TODO: Check CanPromote
-                        GameService.BoardDataNext(bm.MoveFrom, bm.MoveTo, false, GameState);
+                        GameService.BoardDataNext(bm.MoveFrom, bm.MoveTo, bm.DoPromote, GameState);
                         // TODO: Draw board
                         for (int r = 0; r < 9; ++r)
                         {
