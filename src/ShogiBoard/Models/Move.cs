@@ -5,11 +5,12 @@ namespace ShogiBoard.Models;
 // move from piece stand: P*5e
 public struct Move
 {
-    private IPosition MoveFrom { get; set; }
-    private IPosition MoveTo { get; set; }
-    private bool DoPromote { get; set; } = false;
+    public IPosition MoveFrom { get; set; }
+    public Tile MoveTo { get; set; }
+    public bool DoPromote { get; } = false;
+    private string DoPromoteChar { get; set; } = "";
 
-    public Move(IPosition moveFrom, IPosition moveTo)
+    public Move(IPosition moveFrom, Tile moveTo)
     {
         MoveFrom = moveFrom;
         MoveTo = moveTo;
@@ -40,6 +41,7 @@ public struct Move
             MoveFrom = new Tile(from);
             MoveTo = new Tile(to);
             DoPromote = true;
+            DoPromoteChar = "+";
         }
         else
         {
@@ -48,8 +50,4 @@ public struct Move
     }
 
     public override readonly string ToString() =>  $"{MoveFrom.MovePosition()}{MoveTo.MovePosition()}{DoPromoteChar}";
-    private readonly string DoPromoteChar
-    {
-        get => DoPromote ? "+" : "";
-    }
 }

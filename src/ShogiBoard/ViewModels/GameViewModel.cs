@@ -15,14 +15,7 @@ public partial class GameViewModel(IEngineCommunicationService ecs, IGameService
     public IEngineCommunicationService EngineCommunicator { get; } = ecs;
     public IGameService GameService { get; } = gs;
 
-    private List<Move> Moves { get; set; } = [];
-    private bool InAGame = false;
-    private bool PlayerIsBlack { get; set; } = true;
-    private bool BlackCanMovePiece { get; set; } = true;
-    private bool PlayerCanMovePiece
-    {
-        get => !InAGame || (PlayerIsBlack == BlackCanMovePiece);
-    }
+    private GameState GameState { get; } = new();
 
     [ObservableProperty]
     public partial IPosition? MoveFrom { get; set; } = null;
@@ -50,25 +43,27 @@ public partial class GameViewModel(IEngineCommunicationService ecs, IGameService
     [RelayCommand]
     private void NewGame()
     {
-        if (InAGame)
+        if (GameState.InAGame)
         {
             EngineCommunicator.GameDraw();
         }
         else
         {
-            InAGame = true;
+            GameState.InAGame = true;
         }
-        PlayerIsBlack = true;
-        BlackCanMovePiece = true;
+        GameState.PlayerIsBlack = true;
+        GameState.BlackCanMovePiece = true;
 
         EngineCommunicator.NewGame();
         ClearMoves();
+
+        GameService.Init9DimBoardData(GameState);
     }
 
     [RelayCommand]
     private void GameEnd()
     {
-        InAGame = false;
+        GameState.InAGame = false;
         EngineCommunicator.GameDraw();
         ClearMoves();
     }
@@ -89,7 +84,7 @@ public partial class GameViewModel(IEngineCommunicationService ecs, IGameService
     [RelayCommand]
     private void InitializeBoard()
     {
-        if (InAGame) return;
+        if (GameState.InAGame) return;
         ClearMoves();
     }
 
@@ -105,7 +100,7 @@ public partial class GameViewModel(IEngineCommunicationService ecs, IGameService
 
     public async Task ClickBoard(int col, int row)
     {
-        if (!PlayerCanMovePiece) return;
+        if (!GameState.PlayerCanMovePiece) return;
         if (col < 0 || col > 8 || row < 0 || row > 8) return;
         int file = 9 - col;
         int rank = 1 + row;
@@ -117,43 +112,85 @@ public partial class GameViewModel(IEngineCommunicationService ecs, IGameService
 
             var move = new Move(from, pos);
 
-            if (!GameService.IsValidMove(move))
+            if (!GameService.IsValidMove(from, pos))
             {
                 ClearPositions();
                 return;
             }
 
-            Moves.Add(move);
-
-            if (InAGame)
+            GameState.Moves.Add(move);
+            // TODO: Check CanPromote
+            GameService.BoardDataNext(move.MoveFrom, move.MoveTo, false, GameState);
+            // TODO: Draw board
+            for (int r = 0; r < 9; ++r)
             {
-                BlackCanMovePiece = !BlackCanMovePiece;
+                Console.Write($"[Rank({r + 1})]: ");
+                for (int c = 0; c < 9; ++c)
+                {
+                    string s = GameState.BoardData[r, c];
+                    if (s == "" || s == string.Empty)
+                    {
+                        s = "-";
+                    }
+                    Console.Write($"{s}");
+                }
+                Console.Write("\n");
+            }
+            Console.WriteLine("------------------");
+
+            if (GameState.InAGame)
+            {
+                GameState.BlackCanMovePiece = !GameState.BlackCanMovePiece;
                 try
                 {
-                    string bestMoveResponse = await EngineCommunicator.SendSfen(Moves);
+                    string bestMoveResponse = await EngineCommunicator.SendSfen(GameState.Moves);
                     string bestMove = UsiParser.ParseBestmove(bestMoveResponse);
 
                     if (bestMove == UsiMessage.RESIGN)
                     {
-                        InAGame = false;
+                        GameState.InAGame = false;
                     }
                     else
                     {
                         Move bm = new(bestMove);
-                        Moves.Add(bm);
-                        BlackCanMovePiece = !BlackCanMovePiece;
+                        GameState.Moves.Add(bm);
+                        GameState.BlackCanMovePiece = !GameState.BlackCanMovePiece;
                         Console.WriteLine(bm);
+                        // TODO: Check CanPromote
+                        GameService.BoardDataNext(bm.MoveFrom, bm.MoveTo, false, GameState);
+                        // TODO: Draw board
+                        for (int r = 0; r < 9; ++r)
+                        {
+                            Console.Write($"[Rank({r + 1})]: ");
+                            for (int c = 0; c < 9; ++c)
+                            {
+                                string s = GameState.BoardData[r, c];
+                                if (s == "" || s == string.Empty)
+                                {
+                                    s = "-";
+                                }
+                                Console.Write($"{s}");
+                            }
+                            Console.Write("\n");
+                        }
+                        Console.WriteLine("------------------");
                     }
                 }
                 catch (Exception e)
                 {
                     Response = e.Message;
-                    InAGame = false;
+                    GameState.InAGame = false;
                 }
             }
 
             MoveFrom = null;
-        } else
+        }
+        else if (MoveFrom is PieceStandPosition)
+        {
+            // TODO
+            // When player wants piece to move from piecestand on to a board.
+        }
+        else
         {
             MoveFrom = pos;
         }
@@ -161,7 +198,7 @@ public partial class GameViewModel(IEngineCommunicationService ecs, IGameService
 
     private void ClearMoves()
     {
-        Moves = [];
+        GameState.Moves = [];
         ClearPositions();
     }
 
