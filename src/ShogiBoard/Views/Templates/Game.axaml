@@ -5,8 +5,10 @@
              xmlns:parts="using:ShogiBoard.Views.Parts"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="ShogiBoard.Views.Templates.Game">
-            <StackPanel>
-              <parts:UserOperation/>
+            <StackPanel Margin="60, 0, 60, 0">
+              <parts:UserOperation />
+              <parts:PieceStandWhite />
               <parts:Board />
+              <parts:PieceStandBlack />
             </StackPanel>
 </UserControl>

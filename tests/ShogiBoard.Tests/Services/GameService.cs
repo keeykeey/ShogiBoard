@@ -110,7 +110,7 @@ public class GameServiceTest
             Assert.Equal(expect, gs.BoardData[toRank - 1, gs.BoardLength - toFile]);
         }
 
-        PieceOnStand? pos = gs.BlackPieceStand.Data.Find(p => p.Piece == "P");
+        PieceOnStand? pos = gs.BlackPieceStand.Data.FirstOrDefault(p => p.Piece == "P");
         Assert.NotNull(pos);
         Assert.Equal(3, pos.Count);
     }
@@ -141,7 +141,7 @@ public class GameServiceTest
             Assert.Equal(expect, gs.BoardData[toRank - 1, gs.BoardLength - toFile]);
         }
 
-        PieceOnStand? pos = gs.WhitePieceStand.Data.Find(p => p.Piece == "n");
+        PieceOnStand? pos = gs.WhitePieceStand.Data.FirstOrDefault(p => p.Piece == "n");
         Assert.NotNull(pos);
         Assert.Equal(3, pos.Count);
     }
@@ -174,10 +174,10 @@ public class GameServiceTest
         Assert.Equal("G", gs.BoardData[3, 5]);
         Assert.Equal("G", gs.BoardData[8, 0]);
 
-        PieceOnStand? rook = gs.BlackPieceStand.Data.Find(p => p.Piece.Equals("R"));
+        PieceOnStand? rook = gs.BlackPieceStand.Data.FirstOrDefault(p => p.Piece.Equals("R"));
         Assert.Null(rook);
 
-        PieceOnStand? gold = gs.BlackPieceStand.Data.Find(p => p.Piece.Equals("G"));
+        PieceOnStand? gold = gs.BlackPieceStand.Data.FirstOrDefault(p => p.Piece.Equals("G"));
         Assert.Equal(1, gold?.Count);
     }
 
@@ -209,10 +209,10 @@ public class GameServiceTest
         Assert.Equal("s", gs.BoardData[3, 5]);
         Assert.Equal("s", gs.BoardData[8, 0]);
 
-        PieceOnStand? bishop = gs.WhitePieceStand.Data.Find(p => p.Piece.Equals("b"));
+        PieceOnStand? bishop = gs.WhitePieceStand.Data.FirstOrDefault(p => p.Piece.Equals("b"));
         Assert.Null(bishop);
 
-        PieceOnStand? silver = gs.WhitePieceStand.Data.Find(p => p.Piece.Equals("s"));
+        PieceOnStand? silver = gs.WhitePieceStand.Data.FirstOrDefault(p => p.Piece.Equals("s"));
         Assert.Equal(1, silver?.Count);
     }
 
@@ -246,12 +246,12 @@ public class GameServiceTest
             gs.BlackCanMovePiece = !gs.BlackCanMovePiece;
         }
 
-        PieceOnStand? pornBlackTook = gs.BlackPieceStand.Data.Find(p => p.Piece == "P");
-        PieceOnStand? pornWhiteTook = gs.WhitePieceStand.Data.Find(p => p.Piece == "p");
-        PieceOnStand? lanceBlackTook = gs.BlackPieceStand.Data.Find(p => p.Piece == "L");
-        PieceOnStand? lanceWhiteTook = gs.WhitePieceStand.Data.Find(p => p.Piece == "l");
-        PieceOnStand? silverBlackTook = gs.BlackPieceStand.Data.Find(p => p.Piece == "S");
-        PieceOnStand? silverWhiteTook = gs.WhitePieceStand.Data.Find(p => p.Piece == "s");
+        PieceOnStand? pornBlackTook = gs.BlackPieceStand.Data.FirstOrDefault(p => p.Piece == "P");
+        PieceOnStand? pornWhiteTook = gs.WhitePieceStand.Data.FirstOrDefault(p => p.Piece == "p");
+        PieceOnStand? lanceBlackTook = gs.BlackPieceStand.Data.FirstOrDefault(p => p.Piece == "L");
+        PieceOnStand? lanceWhiteTook = gs.WhitePieceStand.Data.FirstOrDefault(p => p.Piece == "l");
+        PieceOnStand? silverBlackTook = gs.BlackPieceStand.Data.FirstOrDefault(p => p.Piece == "S");
+        PieceOnStand? silverWhiteTook = gs.WhitePieceStand.Data.FirstOrDefault(p => p.Piece == "s");
 
         Assert.Equal(1, pornBlackTook?.Count);
         Assert.Equal(2, pornWhiteTook?.Count);

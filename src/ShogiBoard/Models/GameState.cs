@@ -1,4 +1,8 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace ShogiBoard.Models;
 
@@ -24,12 +28,12 @@ public class GameState(
 
 public class PieceStand
 {
-    public List<PieceOnStand> Data = [];
+    public ObservableCollection<PieceOnStand> Data = [];
     public void Add(string piece)
     {
         if (piece == string.Empty) return;
 
-        PieceOnStand? found = Data.Find(v => v.Piece.Equals(piece));
+        PieceOnStand? found = Data.FirstOrDefault(v => v.Piece.Equals(piece));
         if (found == null)
         {
             PieceOnStand pos = new(piece, 1);
@@ -45,7 +49,7 @@ public class PieceStand
     {
         if (piece == string.Empty) return;
 
-        PieceOnStand? found = Data.Find(v => v.Piece.Equals(piece));
+        PieceOnStand? found = Data.FirstOrDefault(v => v.Piece.Equals(piece));
         found?.Decrement();
 
         if (found?.Count == 0)
@@ -55,10 +59,17 @@ public class PieceStand
     }
 }
 
-public class PieceOnStand(string piece, int count)
+public class PieceOnStand(string piece, int count): INotifyPropertyChanged
 {
-    public string Piece = piece;
-    public int Count = count;
+    public string Piece { get; set; } = piece;
+    public int Count { get; set; } = count;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
 
     public void Set(string piece, int count)
     {
@@ -68,17 +79,21 @@ public class PieceOnStand(string piece, int count)
         }
         Piece = piece;
         Count = count;
+        NotifyPropertyChanged(nameof(Piece));
+        NotifyPropertyChanged(nameof(Count));
     }
 
     public void Increment()
     {
         if (Count == int.MaxValue) return;
         Count += 1;
+        NotifyPropertyChanged(nameof(Count));
     }
 
     public void Decrement()
     {
         if (Count < 1) return;
         Count -= 1;
+        NotifyPropertyChanged(nameof(Count));
     }
 }

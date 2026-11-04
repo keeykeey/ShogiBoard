@@ -1,0 +1,30 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             xmlns:vm="using:ShogiBoard.ViewModels"
+             xmlns:m="using:ShogiBoard.Models"
+             xmlns:conv="using:ShogiBoard.Converters"
+             x:DataType="vm:GameViewModel"
+             x:Class="ShogiBoard.Views.Parts.PieceStandWhite">
+            <UserControl.Resources>
+              <conv:PieceToBitmapConverter x:Key="PieceToBitmap"/>
+            </UserControl.Resources>
+            <ItemsControl ItemsSource="{Binding WhitePieceStand}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Orientation="Horizontal" Spacing="4"/>
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="m:PieceOnStand">
+                  <StackPanel Orientation="Horizontal">
+                    <Image Height="24" Width="24"
+                      Source="{Binding Piece, Converter={StaticResource PieceToBitmap}}"/>
+                    <TextBlock Text="{Binding Count}"/>
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+</UserControl>

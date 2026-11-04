@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -14,6 +15,12 @@ public partial class GameViewModel : ViewModelBase
     public IEngineCommunicationService EngineCommunicator { get; }
     public IGameService GameService { get; }
     private GameState GameState { get; }
+    [ObservableProperty]
+    public partial ObservableCollection<PieceOnStand> BlackPieceStand { get; set; }
+
+    [ObservableProperty]
+    public partial ObservableCollection<PieceOnStand> WhitePieceStand { get; set; }
+
 
     public GameViewModel(IEngineCommunicationService ecs, IGameService gs)
     {
@@ -21,6 +28,8 @@ public partial class GameViewModel : ViewModelBase
         GameService  = gs;
         GameState = new();
         GameService.Init9DimBoardData(GameState);
+        BlackPieceStand = GameState.BlackPieceStand.Data;
+        WhitePieceStand = GameState.WhitePieceStand.Data;
     }
 
     [ObservableProperty]
@@ -131,6 +140,11 @@ public partial class GameViewModel : ViewModelBase
             GameService.BoardDataNext(move.MoveFrom, move.MoveTo, move.DoPromote, GameState);
             GameService.NextTurn(GameState);
             // TODO: Draw board
+            foreach (var p in WhitePieceStand)
+            {
+                Console.Write($"[{p.Piece}{p.Count}]");
+            }
+            Console.Write("\n");
             for (int r = 0; r < 9; ++r)
             {
                 Console.Write($"[Rank({r + 1})]: ");
@@ -145,6 +159,11 @@ public partial class GameViewModel : ViewModelBase
                 }
                 Console.Write("\n");
             }
+            foreach (var p in BlackPieceStand)
+            {
+                Console.Write($"[{p.Piece}{p.Count}]");
+            }
+            Console.Write("\n");
             Console.WriteLine("------------------");
 
             if (GameState.InAGame)
@@ -166,6 +185,11 @@ public partial class GameViewModel : ViewModelBase
                         GameService.BoardDataNext(bm.MoveFrom, bm.MoveTo, bm.DoPromote, GameState);
                         GameService.NextTurn(GameState);
                         // TODO: Draw board
+                        foreach (var p in WhitePieceStand)
+                        {
+                            Console.Write($"[{p.Piece}{p.Count}]");
+                        }
+                        Console.Write("\n");
                         for (int r = 0; r < 9; ++r)
                         {
                             Console.Write($"[Rank({r + 1})]: ");
@@ -180,6 +204,11 @@ public partial class GameViewModel : ViewModelBase
                             }
                             Console.Write("\n");
                         }
+                        foreach (var p in BlackPieceStand)
+                        {
+                            Console.Write($"[{p.Piece}{p.Count}]");
+                        }
+                        Console.Write("\n");
                         Console.WriteLine("------------------");
                     }
                 }

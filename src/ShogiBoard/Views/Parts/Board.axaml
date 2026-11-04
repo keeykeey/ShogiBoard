@@ -8,7 +8,7 @@
              x:Class="ShogiBoard.Views.Parts.Board">
             <Panel Margin="0">
                 <Image x:Name="BoardImage" Margin="0" Height="400" Width="400"
-                    Source="/Assets/board.png"
+                    Source="/Assets/one/board.png"
                     PointerPressed="OnBoardPointerPressed"/>
             </Panel>
 </UserControl>
