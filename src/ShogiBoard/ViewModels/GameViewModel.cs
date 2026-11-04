@@ -9,12 +9,19 @@ using System.Threading.Tasks;
 
 namespace ShogiBoard.ViewModels;
 
-public partial class GameViewModel(IEngineCommunicationService ecs, IGameService gs) : ViewModelBase
+public partial class GameViewModel : ViewModelBase
 {
-    public IEngineCommunicationService EngineCommunicator { get; } = ecs;
-    public IGameService GameService { get; } = gs;
+    public IEngineCommunicationService EngineCommunicator { get; }
+    public IGameService GameService { get; }
+    private GameState GameState { get; }
 
-    private GameState GameState { get; } = new();
+    public GameViewModel(IEngineCommunicationService ecs, IGameService gs)
+    {
+        EngineCommunicator = ecs;
+        GameService  = gs;
+        GameState = new();
+        GameService.Init9DimBoardData(GameState);
+    }
 
     [ObservableProperty]
     public partial IPosition? MoveFrom { get; set; } = null;
