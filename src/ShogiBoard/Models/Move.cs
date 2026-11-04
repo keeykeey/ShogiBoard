@@ -17,16 +17,21 @@ public struct Move
         DoPromote = doPromote;
     }
 
-    public Move(string position)
+    public Move(string position, bool turnIsBlack)
     {
         if (position.Length < 4) throw new ArgumentException("Unexpected Position for Move");
 
-        string from = position[..2];
+        string head = position[0].ToString();
+        bool moveFromTile = char.IsDigit(head[0]);
+
+        string from = (!turnIsBlack && !moveFromTile)
+            ? position.Replace(head, head.ToLower())[..2]  // when white putting piece from piece-stand
+            : position[..2];                               // else case
         string to = position.Substring(2, 2);
 
         if (position.Length == 4)
         {
-            if (char.IsDigit(position[0]))
+            if (moveFromTile)
             {
                 MoveFrom = new Tile(from);
                 MoveTo = new Tile(to);

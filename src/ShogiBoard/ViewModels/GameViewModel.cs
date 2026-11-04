@@ -153,7 +153,7 @@ public partial class GameViewModel(IEngineCommunicationService ecs, IGameService
                     }
                     else
                     {
-                        Move bm = new(bestMove);
+                        Move bm = new(bestMove, GameState.BlackCanMovePiece);
                         GameState.Moves.Add(bm);
                         GameState.BlackCanMovePiece = !GameState.BlackCanMovePiece;
                         Console.WriteLine(bm);
