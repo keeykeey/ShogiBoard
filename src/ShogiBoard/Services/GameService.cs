@@ -7,8 +7,9 @@ public interface IGameService
     void Init9DimBoardData(GameState gameState);
     void UpdateBoardData(GameState gameState, string sfenBoardText);
     void BoardDataNext(IPosition from, Tile to, bool promote, GameState state);
+    void NextTurn(GameState state);
     bool IsValidMove(IPosition from, IPosition to);
-    bool CanPromote(int destTileRank, bool blackCanMovePiece);
+    bool CanPromote(Tile fromTileRank, Tile destTileRank, GameState state);
 }
 
 public class GameService : IGameService
@@ -129,6 +130,11 @@ public class GameService : IGameService
         }
     }
 
+    public void NextTurn(GameState gs)
+    {
+        gs.BlackCanMovePiece = !gs.BlackCanMovePiece;
+    }
+
     private static bool IsValidPieceChar(char ch)
     {
         return ch switch
@@ -145,11 +151,11 @@ public class GameService : IGameService
         WhitePromotionLine = wpl;
     }
 
-    public bool CanPromote(int destTileRank, bool blackCanMovePiece)
+    public bool CanPromote(Tile from, Tile to, GameState gs)
     {
-        bool canPromote =
-            (blackCanMovePiece && (destTileRank <= BlackPromotionLine))
-            || (!blackCanMovePiece && (WhitePromotionLine <= destTileRank));
+        bool canPromote = gs.BlackCanMovePiece
+            ? (from.Ranks <= BlackPromotionLine) || (to.Ranks <= BlackPromotionLine)
+            : (from.Ranks >= WhitePromotionLine) || (to.Ranks >= WhitePromotionLine);
 
         return canPromote;
     }

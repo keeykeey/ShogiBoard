@@ -57,7 +57,7 @@ public partial class GameViewModel : ViewModelBase
         {
             GameState.InAGame = true;
         }
-        GameState.PlayerIsBlack = true;
+        GameState.PlayerIsBlack = true;  // TODO: let user to select black or white
         GameState.BlackCanMovePiece = true;
 
         EngineCommunicator.NewGame();
@@ -116,7 +116,7 @@ public partial class GameViewModel : ViewModelBase
         {
             if (from.Equals(pos)) return;
 
-            bool canPlayerPromote = GameService.CanPromote(from.Ranks, GameState.BlackCanMovePiece);
+            bool canPlayerPromote = GameService.CanPromote(from, pos, GameState);
             // TODO let player to choose if promote or not via UI.
             bool playerDoPromote = canPlayerPromote;
             var move = new Move(from, pos, playerDoPromote);
@@ -129,6 +129,7 @@ public partial class GameViewModel : ViewModelBase
 
             GameState.Moves.Add(move);
             GameService.BoardDataNext(move.MoveFrom, move.MoveTo, move.DoPromote, GameState);
+            GameService.NextTurn(GameState);
             // TODO: Draw board
             for (int r = 0; r < 9; ++r)
             {
@@ -148,7 +149,6 @@ public partial class GameViewModel : ViewModelBase
 
             if (GameState.InAGame)
             {
-                GameState.BlackCanMovePiece = !GameState.BlackCanMovePiece;
                 try
                 {
                     string bestMoveResponse = await EngineCommunicator.SendSfen(GameState.Moves);
@@ -162,9 +162,9 @@ public partial class GameViewModel : ViewModelBase
                     {
                         Move bm = new(bestMove, GameState.BlackCanMovePiece);
                         GameState.Moves.Add(bm);
-                        GameState.BlackCanMovePiece = !GameState.BlackCanMovePiece;
                         Console.WriteLine(bm);
                         GameService.BoardDataNext(bm.MoveFrom, bm.MoveTo, bm.DoPromote, GameState);
+                        GameService.NextTurn(GameState);
                         // TODO: Draw board
                         for (int r = 0; r < 9; ++r)
                         {
