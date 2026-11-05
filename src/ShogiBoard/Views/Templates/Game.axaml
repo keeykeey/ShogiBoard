@@ -3,12 +3,14 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:parts="using:ShogiBoard.Views.Parts"
+             xmlns:vm="using:ShogiBoard.ViewModels"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:DataType="vm:GameViewModel"
              x:Class="ShogiBoard.Views.Templates.Game">
             <StackPanel Margin="60, 0, 60, 0">
               <parts:UserOperation />
-              <parts:PieceStandWhite />
+              <parts:PieceStandView Pieces="{Binding WhitePieceStand}" />
               <parts:Board />
-              <parts:PieceStandBlack />
+              <parts:PieceStandView Pieces="{Binding BlackPieceStand}" />
             </StackPanel>
 </UserControl>
