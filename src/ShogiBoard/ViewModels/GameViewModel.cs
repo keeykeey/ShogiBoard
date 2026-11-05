@@ -14,7 +14,7 @@ public partial class GameViewModel : ViewModelBase
 {
     public IEngineCommunicationService EngineCommunicator { get; }
     public IGameService GameService { get; }
-    private GameState GameState { get; }
+    private GameState GameState { get; set; }
     [ObservableProperty]
     public partial ObservableCollection<PieceOnStand> BlackPieceStand { get; set; }
 
@@ -62,17 +62,13 @@ public partial class GameViewModel : ViewModelBase
         {
             EngineCommunicator.GameDraw();
         }
-        else
-        {
-            GameState.InAGame = true;
-        }
-        GameState.PlayerIsBlack = true;  // TODO: let user to select black or white
-        GameState.BlackCanMovePiece = true;
+
+        // TODO: let user to select black or white
+        ClearViewModelState();
+        GameState = new(inAGame: true, playerIsBlack: true, blackCanMovePiece: true);
+        GameService.Init9DimBoardData(GameState);
 
         EngineCommunicator.NewGame();
-        ClearMoves();
-
-        GameService.Init9DimBoardData(GameState);
     }
 
     [RelayCommand]
@@ -80,7 +76,6 @@ public partial class GameViewModel : ViewModelBase
     {
         GameState.InAGame = false;
         EngineCommunicator.GameDraw();
-        ClearMoves();
     }
 
     [RelayCommand]
@@ -93,14 +88,16 @@ public partial class GameViewModel : ViewModelBase
     private void QuitEngine()
     {
         EngineCommunicator.Quit();
-        ClearMoves();
+        ClearMoveFrom();
     }
 
     [RelayCommand]
     private void InitializeBoard()
     {
         if (GameState.InAGame) return;
-        ClearMoves();
+        ClearViewModelState();
+        GameState = new();
+        GameService.Init9DimBoardData(GameState);
     }
 
     private void ResponseReceived(string m)
@@ -121,125 +118,123 @@ public partial class GameViewModel : ViewModelBase
         int rank = 1 + row;
         var pos = new Tile(file, rank);
 
+        bool playerDoPromote = false;
         if (MoveFrom is Tile from)
         {
             if (from.Equals(pos)) return;
 
             bool canPlayerPromote = GameService.CanPromote(from, pos, GameState);
             // TODO let player to choose if promote or not via UI.
-            bool playerDoPromote = canPlayerPromote;
-            var move = new Move(from, pos, playerDoPromote);
+            playerDoPromote = canPlayerPromote;
 
-            if (!GameService.IsValidMove(from, pos))
-            {
-                ClearPositions();
-                return;
-            }
-
-            GameState.Moves.Add(move);
-            GameService.BoardDataNext(move.MoveFrom, move.MoveTo, move.DoPromote, GameState);
-            GameService.NextTurn(GameState);
-            // TODO: Draw board
-            foreach (var p in WhitePieceStand)
-            {
-                Console.Write($"[{p.Piece}{p.Count}]");
-            }
-            Console.Write("\n");
-            for (int r = 0; r < 9; ++r)
-            {
-                Console.Write($"[Rank({r + 1})]: ");
-                for (int c = 0; c < 9; ++c)
-                {
-                    string s = GameState.BoardData[r, c];
-                    if (s == "" || s == string.Empty)
-                    {
-                        s = "-";
-                    }
-                    Console.Write($"{s}");
-                }
-                Console.Write("\n");
-            }
-            foreach (var p in BlackPieceStand)
-            {
-                Console.Write($"[{p.Piece}{p.Count}]");
-            }
-            Console.Write("\n");
-            Console.WriteLine("------------------");
-
-            if (GameState.InAGame)
-            {
-                try
-                {
-                    string bestMoveResponse = await EngineCommunicator.SendSfen(GameState.Moves);
-                    string bestMove = UsiParser.ParseBestmove(bestMoveResponse);
-
-                    if (bestMove == UsiMessage.RESIGN)
-                    {
-                        GameState.InAGame = false;
-                    }
-                    else
-                    {
-                        Move bm = new(bestMove, GameState.BlackCanMovePiece);
-                        GameState.Moves.Add(bm);
-                        Console.WriteLine(bm);
-                        GameService.BoardDataNext(bm.MoveFrom, bm.MoveTo, bm.DoPromote, GameState);
-                        GameService.NextTurn(GameState);
-                        // TODO: Draw board
-                        foreach (var p in WhitePieceStand)
-                        {
-                            Console.Write($"[{p.Piece}{p.Count}]");
-                        }
-                        Console.Write("\n");
-                        for (int r = 0; r < 9; ++r)
-                        {
-                            Console.Write($"[Rank({r + 1})]: ");
-                            for (int c = 0; c < 9; ++c)
-                            {
-                                string s = GameState.BoardData[r, c];
-                                if (s == "" || s == string.Empty)
-                                {
-                                    s = "-";
-                                }
-                                Console.Write($"{s}");
-                            }
-                            Console.Write("\n");
-                        }
-                        foreach (var p in BlackPieceStand)
-                        {
-                            Console.Write($"[{p.Piece}{p.Count}]");
-                        }
-                        Console.Write("\n");
-                        Console.WriteLine("------------------");
-                    }
-                }
-                catch (Exception e)
-                {
-                    Response = e.Message;
-                    GameState.InAGame = false;
-                }
-            }
-
-            MoveFrom = null;
         }
         else if (MoveFrom is PieceStandPosition)
         {
-            // TODO
-            // When player wants piece to move from piecestand on to a board.
+            // need to do nothing.
         }
         else
         {
             MoveFrom = pos;
+            return;
+        }
+
+        NextGameState(MoveFrom, pos, playerDoPromote);
+
+        if (GameState.InAGame)
+        {
+            await HandleBestMoveFromEngine();
+        }
+        MoveFrom = null;
+        ConsoleDrawBoard();
+    }
+
+    public void ClickPiecceStand(string piece)
+    {
+        if (!GameState.PlayerCanMovePiece) return;
+        PieceStandPosition psp = new(piece);
+        MoveFrom = psp;
+    }
+
+    private void ClearViewModelState()
+    {
+        MoveFrom = null;
+        BlackPieceStand = GameState.BlackPieceStand.Data;
+        WhitePieceStand = GameState.WhitePieceStand.Data;
+    }
+
+    private void ClearMoveFrom()
+    {
+        MoveFrom = null;
+    }
+
+    private void NextGameState(IPosition from, Tile to, bool playerDoPromote)
+    {
+        if (!GameService.IsValidMove(from, to))
+        {
+            ClearMoveFrom();
+            return;
+        }
+
+        var move = new Move(from, to, playerDoPromote);
+
+        GameState.Moves.Add(move);
+        GameService.BoardDataNext(move.MoveFrom, move.MoveTo, move.DoPromote, GameState);
+        GameService.NextTurn(GameState);
+    }
+
+    private async Task HandleBestMoveFromEngine()
+    {
+        try
+        {
+            string bestMoveResponse = await EngineCommunicator.SendSfen(GameState.Moves);
+            string bestMove = UsiParser.ParseBestmove(bestMoveResponse);
+
+            if (bestMove == UsiMessage.RESIGN)
+            {
+                GameState.InAGame = false;
+            }
+            else
+            {
+                Move bm = new(bestMove, GameState.BlackCanMovePiece);
+                GameState.Moves.Add(bm);
+                Console.WriteLine(bm);
+                GameService.BoardDataNext(bm.MoveFrom, bm.MoveTo, bm.DoPromote, GameState);
+                GameService.NextTurn(GameState);
+            }
+        }
+        catch (Exception e)
+        {
+            Response = e.Message;
+            GameState.InAGame = false;
         }
     }
 
-    private void ClearMoves()
+    private void ConsoleDrawBoard()
     {
-        GameState.Moves = [];
-        ClearPositions();
-    }
-
-    private void ClearPositions()
-    {
-        MoveFrom = null;
+        foreach (var p in WhitePieceStand)
+        {
+            Console.Write($"[{p.Piece}{p.Count}]");
+        }
+        Console.Write("\n");
+        for (int r = 0; r < 9; ++r)
+        {
+            Console.Write($"[Rank({r + 1})]: ");
+            for (int c = 0; c < 9; ++c)
+            {
+                string s = GameState.BoardData[r, c];
+                if (s == "" || s == string.Empty)
+                {
+                    s = "-";
+                }
+                Console.Write($"{s}");
+            }
+            Console.Write("\n");
+        }
+        foreach (var p in BlackPieceStand)
+        {
+            Console.Write($"[{p.Piece}{p.Count}]");
+        }
+        Console.Write("\n");
+        Console.WriteLine("------------------");
     }
 }

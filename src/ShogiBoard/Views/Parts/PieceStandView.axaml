@@ -23,7 +23,9 @@
                 <DataTemplate x:DataType="m:PieceOnStand">
                   <StackPanel Orientation="Horizontal">
                     <Image Height="32" Width="32"
-                      Source="{Binding Piece, Converter={StaticResource PieceToBitmap}}"/>
+                      Source="{Binding Piece, Converter={StaticResource PieceToBitmap}}"
+                      Name="{Binding Piece}"
+                      PointerPressed="OnPiecePointerPressed"/>
                     <TextBlock Text="{Binding Count}"/>
                   </StackPanel>
                 </DataTemplate>
