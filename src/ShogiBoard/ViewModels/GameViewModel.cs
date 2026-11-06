@@ -15,11 +15,8 @@ public partial class GameViewModel : ViewModelBase
     public IEngineCommunicationService EngineCommunicator { get; }
     public IGameService GameService { get; }
     private GameState GameState { get; set; }
-    [ObservableProperty]
-    public partial ObservableCollection<PieceOnStand> BlackPieceStand { get; set; }
-
-    [ObservableProperty]
-    public partial ObservableCollection<PieceOnStand> WhitePieceStand { get; set; }
+    public ObservableCollection<PieceOnStand> BlackPieceStand { get; set; }
+    public ObservableCollection<PieceOnStand> WhitePieceStand { get; set; }
 
 
     public GameViewModel(IEngineCommunicationService ecs, IGameService gs)
