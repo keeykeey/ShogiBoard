@@ -1,0 +1,5 @@
+bin
+src/ShogiBoard/engine/*
+!src/ShogiBoard/engine/.gitkeep
+obj
+tmp

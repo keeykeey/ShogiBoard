@@ -1,0 +1,23 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ShogiBoard.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:DataType="vm:GameViewModel"
+             x:Class="ShogiBoard.Views.Parts.UserOperation">
+        <StackPanel>
+            <Grid
+                ColumnDefinitions="Auto, Auto" RowDefinitions="Auto, Auto, Auto"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+            >
+                <Button Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" Command="{Binding StartEngineCommand}">Start Engine</Button>
+                <Button Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left" Command="{Binding QuitEngineCommand}">Quit Engine</Button>
+                <Button Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" Command="{Binding NewGameCommand}">New Game</Button>
+                <Button Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" Command="{Binding GameEndCommand}">Game End</Button>
+                <Button Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" Command="{Binding InitializeBoardCommand}">Initialize Board</Button>
+            </Grid>
+            <TextBox Text="{Binding Message}"/>
+            <Button HorizontalAlignment="Center" Command="{Binding SendMessageCommand}">SendMessage</Button>
+        </StackPanel>
+</UserControl>

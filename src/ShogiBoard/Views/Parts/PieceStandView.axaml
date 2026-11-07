@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             xmlns:parts="using:ShogiBoard.Views.Parts"
+             xmlns:m="using:ShogiBoard.Models"
+             xmlns:conv="using:ShogiBoard.Converters"
+             xmlns:vm="using:ShogiBoard.ViewModels"
+             x:DataType="vm:GameViewModel"
+             Height="36"
+             x:Class="ShogiBoard.Views.Parts.PieceStandView">
+            <UserControl.Resources>
+              <conv:PieceToBitmapConverter x:Key="PieceToBitmap"/>
+            </UserControl.Resources>
+            <ItemsControl ItemsSource="{Binding $parent[parts:PieceStandView].Pieces}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Orientation="Horizontal" Spacing="4"/>
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="m:PieceOnStand">
+                  <StackPanel Orientation="Horizontal">
+                    <Image Height="32" Width="32"
+                      Source="{Binding Piece, Converter={StaticResource PieceToBitmap}}"
+                      Name="{Binding Piece}"
+                      PointerPressed="OnPiecePointerPressed"/>
+                    <TextBlock Text="{Binding Count}"/>
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+</UserControl>
