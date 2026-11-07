@@ -1,0 +1,24 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ShogiBoard.ViewModels"
+        x:DataType="vm:AskPromoteViewModel"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="ShogiBoard.Views.Dialog.AskPromote"
+        Title="Promote ?"
+        Width="200" Height="120"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False">
+        <StackPanel Orientation="Horizontal">
+            <Image Height="32" Width="32"
+                Source="{Binding Piece, Converter={StaticResource PieceToBitmap}}"
+                Name="{Binding Piece}"
+                PointerPressed="OnPiecePointerPressed"/>
+            <Image Height="32" Width="32"
+                Source="{Binding PiecePromote, Converter={StaticResource PieceToBitmap}}"
+                Name="{Binding PiecePromote}"
+                PointerPressed="OnPiecePointerPressed"/>
+        </StackPanel>
+</Window>

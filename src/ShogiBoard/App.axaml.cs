@@ -20,6 +20,7 @@ public partial class App : Application
         var service = new ServiceCollection();
         service.AddTransient<IEngineCommunicationService, EngineCommunicationService>();
         service.AddTransient<IGameService, GameService>();
+        service.AddTransient<IDialogService, DialogService>();
         service.AddTransient<GameViewModel>();
         service.AddTransient<MainViewModel>();
 
