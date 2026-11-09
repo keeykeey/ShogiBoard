@@ -5,7 +5,7 @@ namespace ShogiBoard.Services;
 public interface IGameService
 {
     void Init9DimBoardData(GameState gameState);
-    void UpdateBoardData(GameState gameState, string sfenBoardText);
+    void SetBoardData(GameState gameState, string sfenBoardText);
     void BoardDataNext(IPosition from, Tile to, bool promote, GameState state);
     void NextTurn(GameState state);
     bool IsValidMove(IPosition from, IPosition to);
@@ -20,20 +20,19 @@ public class GameService : IGameService
 
     public void Init9DimBoardData(GameState gameState)
     {
-        UpdateBoardData(gameState, startPos9Dim);
+        SetBoardData(gameState, startPos9Dim);
     }
 
-    /* It sets new board data into a 2-dimentional board data matrix */
-    public void UpdateBoardData(GameState gameState, string sfenBoardText)
+    public void SetBoardData(GameState gameState, string sfenBoardText)
     {
-        for (int i = 0, file = 0, rank = 0 ; i < sfenBoardText.Length; ++i )
+        for (int i = 0, file = gameState.Board.NFile, rank = 1 ; i < sfenBoardText.Length; ++i )
         {
             char ch = sfenBoardText[i];
             if (ch == '/')
             {
-                file = 0;
+                file = gameState.Board.NFile;
                 ++rank;
-                if (gameState.BoardLength < rank + 1)
+                if (gameState.Board.NRank < rank)
                 {
                     throw new System.Exception($"Got too many '/' for the board length");
                 }
@@ -46,34 +45,34 @@ public class GameService : IGameService
                 {
                     throw new System.Exception($"Unexpected character at position ({i + 1}) from {sfenBoardText}. Got {s[1]}");
                 };
-                gameState.BoardData[rank, file] = s;
+                gameState.Board.Set(file: file, rank: rank, piece: s);
                 i += 1;
-                ++file;
+                --file;
             }
             else if (int.TryParse(ch.ToString(), out var n))
             {
-                if (n < 0 || (gameState.BoardLength - file) < n) throw new System.Exception($"Unexpected character at position ({i}) from {sfenBoardText}. Got {n}");
+                if (n < 0 || file < n) throw new System.Exception($"Unexpected character at position ({i}) from {sfenBoardText}. Got {n}");
 
                 for (int _n = 0; _n < n; _n++)
                 {
-                    gameState.BoardData[rank, file + _n] = string.Empty;
+                    gameState.Board.Set(file: file - _n, rank: rank, piece: string.Empty);
                 }
 
-                file += n;
+                file -= n;
             }
             else if (IsValidPieceChar(ch))
             {
-                gameState.BoardData[rank, file] = ch.ToString();
-                ++file;
+                gameState.Board.Set(file: file, rank: rank, piece: ch.ToString());
+                --file;
             }
             else
             {
                 throw new System.Exception($"Unexpected character at position ({i}) from {sfenBoardText}. Got ({ch})");
             }
 
-            if (gameState.BoardLength < file)
+            if (gameState.Board.NFile < file - 1)
             {
-                throw new System.Exception($"Too long width({file + 1}) for the board({gameState.BoardLength}, {gameState.BoardLength}). (index: {i}, ch: {ch})");
+                throw new System.Exception($"Too long width({file}) for the board(rank: {gameState.Board.NRank}, file: {gameState.Board.NFile}). (index: {i}, ch: {ch})");
             }
         }
     }
@@ -86,18 +85,13 @@ public class GameService : IGameService
 
     public void BoardDataNext(IPosition from, Tile to, bool promote, GameState state)
     {
-        int toRankIndex = to.Ranks - 1;
-        int toFileIndex = state.BoardLength - to.Files;
-
         if (from is Tile tile)
         {
-            int fromRankIndex = tile.Ranks - 1;
-            int fromFileIndex = state.BoardLength - tile.Files;
             string doPromoteStr = promote ? "+" : "";
-            string movingPiece = $"{doPromoteStr}{state.BoardData[fromRankIndex, fromFileIndex]}";
-            string pieceToBeTaken = state.BoardData[toRankIndex, toFileIndex];
-            state.BoardData[fromRankIndex, fromFileIndex] = string.Empty;
-            state.BoardData[toRankIndex, toFileIndex] = movingPiece;
+            string movingPiece = $"{doPromoteStr}{state.Board.Get(rank: tile.Ranks, file: tile.Files)}";
+            string pieceToBeTaken = state.Board.Get(rank: to.Ranks, file: to.Files);
+            state.Board.Set(rank: tile.Ranks, file: tile.Files, string.Empty);
+            state.Board.Set(rank: to.Ranks, file: to.Files, piece: movingPiece);
             if (state.BlackCanMovePiece)
             {
                 state.BlackPieceStand.Add(pieceToBeTaken.Replace("+", "").ToUpper());
@@ -109,12 +103,12 @@ public class GameService : IGameService
         }
         else if (from is PieceStandPosition ps)
         {
-            if (state.BoardData[toRankIndex, toFileIndex] != string.Empty)
+            if (state.Board.Get(rank: to.Ranks, file: to.Files) != string.Empty)
             {
                 throw new System.Exception("can't set piece on opponent's piece");
             }
 
-            state.BoardData[toRankIndex, toFileIndex] = ps.PieceChar;
+            state.Board.Set(rank: to.Ranks, file: to.Files, ps.PieceChar);
             if (state.BlackCanMovePiece)
             {
                 state.BlackPieceStand.Remove(ps.PieceChar);

@@ -7,13 +7,10 @@ using System.Runtime.CompilerServices;
 namespace ShogiBoard.Models;
 
 public class GameState(
-    int  boardLength = 9,
     bool inAGame = false,
     bool playerIsBlack = true,
     bool blackCanMovePiece = true)
 {
-    public int BoardLength = boardLength;
-    public string[,] BoardData = new string[boardLength, boardLength];
     public Board Board = new();
     public PieceStand BlackPieceStand = new();
     public PieceStand WhitePieceStand = new();
@@ -29,6 +26,7 @@ public class GameState(
 
 public class BoardRank : INotifyPropertyChanged
 {
+    public int NFile = 9;
     private string One { get; set; } = "";  // File-1 in a Rank
     private string Two { get; set; } = "";  // File-2 in a Rank
     private string Three { get; set; } = ""; // File-3 in a Rank
@@ -107,6 +105,8 @@ public class BoardRank : INotifyPropertyChanged
 
 public class Board
 {
+    public int NRank = 9;
+    public int NFile;
     private BoardRank A { get; set; } = new();
     private BoardRank B { get; set; } = new();
     private BoardRank C { get; set; } = new();
@@ -116,6 +116,12 @@ public class Board
     private BoardRank G { get; set; } = new();
     private BoardRank H { get; set; } = new();
     private BoardRank I { get; set; } = new();
+
+    public Board()
+    {
+        NFile = A.NFile;
+    }
+
 
     public string Get(int rank, int file) => rank switch
     {

@@ -217,12 +217,12 @@ public partial class GameViewModel : ViewModelBase
             Console.Write($"[{p.Piece}{p.Count}]");
         }
         Console.Write("\n");
-        for (int r = 0; r < 9; ++r)
+        for (int r = 1; r <= 9; ++r)
         {
-            Console.Write($"[Rank({r + 1})]: ");
-            for (int c = 0; c < 9; ++c)
+            Console.Write($"[Rank({r})]: ");
+            for (int c = 9; c >= 1; --c)
             {
-                string s = GameState.BoardData[r, c];
+                string s = GameState.Board.Get(rank: r, file: c);
                 if (s == "" || s == string.Empty)
                 {
                     s = "-";

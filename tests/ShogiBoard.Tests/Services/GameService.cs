@@ -6,27 +6,27 @@ namespace ShogiBoard.Tests.Services;
 public class GameServiceTest
 {
     [Theory]
-    [InlineData("l1n/+s1g/b1r", 3)]
-    [InlineData("l1nK/+s2g/b1+Pr", 4)]
-    [InlineData("lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL", 9)]
-    public void UpdateBoardDataTest_Positive(string text, int boardLength)
+    [InlineData("l1n6/+s1g6/b1r6/9/9/9/9/9/9")]
+    [InlineData("9/9/9/9/9/9/5l1nK/5+s2g/5b1+Pr")]
+    [InlineData("lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL")]
+    public void SetBoardDataTest_Positive(string text)
     {
-        GameState gs = new(boardLength);
+        GameState gs = new();
         GameService service = new();
-        service.UpdateBoardData(gs, text);
+        service.SetBoardData(gs, text);
 
         string[] data = text.Split("/");
-        for (int i = 0; i < data.Length; ++i)
+        for (int rank = 1; rank <= gs.Board.NRank; ++rank)
         {
-            string rank = data[i];
-            int files = 0;
-            for (int j = 0; j < rank.Length; ++j)
+            string rankText = data[rank - 1];
+            int files = 9;
+            for (int j = 0; j < rankText.Length; ++j)
             {
-                string s = rank.Substring(j, 1);
+                string s = rankText.Substring(j, 1);
                 if (s == "+")
                 {
-                    s = rank.Substring(j, 2);
-                    Assert.Equal(s, gs.BoardData[i, files]);
+                    s = rankText.Substring(j, 2);
+                    Assert.Equal(s, gs.Board.Get(file: files, rank: rank));
                     j += 1;
                 }
                 else
@@ -35,17 +35,17 @@ public class GameServiceTest
                     {
                         for (int k = 0; k < n; ++k)
                         {
-                            Assert.Equal(string.Empty, gs.BoardData[i, files + k]);
+                            Assert.Equal(string.Empty, gs.Board.Get(file: files - k, rank: rank));
                         }
-                        files += n;
+                        files -= n;
                         continue;
                     }
                     else
                     {
-                        Assert.Equal(s, gs.BoardData[i, files]);
+                        Assert.Equal(s, gs.Board.Get(file: files, rank: rank));
                     }
                 }
-                files += 1;
+                files -= 1;
             }
         }
     }
@@ -78,10 +78,10 @@ public class GameServiceTest
             blackCanMovePiece:blackCanMovePiece
         );
 
-        service.UpdateBoardData(gs, sfen);
+        service.SetBoardData(gs, sfen);
         service.BoardDataNext(from, to, promote, gs);
-        Assert.Equal("", gs.BoardData[frank - 1, gs.BoardLength - ffile]);
-        Assert.Equal(expectPieceOnTo, gs.BoardData[torank - 1, gs.BoardLength - tofile]);
+        Assert.Equal("", gs.Board.Get(file: ffile, rank: frank));
+        Assert.Equal(expectPieceOnTo, gs.Board.Get(file: tofile, rank: torank));
     }
 
     [Fact]
@@ -104,10 +104,10 @@ public class GameServiceTest
         {
             Tile from = new (fromFile, fromRank);
             Tile to = new(toFile, toRank);
-            service.UpdateBoardData(gs, sfen);
+            service.SetBoardData(gs, sfen);
             service.BoardDataNext(from, to, false, gs);
-            Assert.Equal("", gs.BoardData[fromRank - 1, gs.BoardLength - fromFile]);
-            Assert.Equal(expect, gs.BoardData[toRank - 1, gs.BoardLength - toFile]);
+            Assert.Equal("", gs.Board.Get(rank: fromRank, file: fromFile));
+            Assert.Equal(expect, gs.Board.Get(rank: toRank, file: toFile));
         }
 
         PieceOnStand? pos = gs.BlackPieceStand.Data.FirstOrDefault(p => p.Piece == "P");
@@ -119,9 +119,9 @@ public class GameServiceTest
     public void BoardDataNext_WhiteTakePieceTest_Positive()
     {
         List<(string sfen, int fromFile, int fromRank, int toFile, int toRank, string expect)> moves = [
-            ("9/p8/Np/9/9/9/9/9/9", 9, 2, 9, 3, "p"),
-            ("9/p8/+Np/9/9/9/9/9/9", 9, 2, 9, 3, "p"),
-            ("9/p8/N/9/9/9/9/9/9", 9, 2, 9, 3, "p"),
+            ("9/p8/N8/9/9/9/9/9/9", 9, 2, 9, 3, "p"),
+            ("9/p8/+N8/9/9/9/9/9/9", 9, 2, 9, 3, "p"),
+            ("9/p8/N8/9/9/9/9/9/9", 9, 2, 9, 3, "p"),
         ];
 
         GameService service = new();
@@ -135,10 +135,10 @@ public class GameServiceTest
         {
             Tile from = new(fromFile, fromRank);
             Tile to = new(toFile, toRank);
-            service.UpdateBoardData(gs, sfen);
+            service.SetBoardData(gs, sfen);
             service.BoardDataNext(from, to, false, gs);
-            Assert.Equal("", gs.BoardData[fromRank - 1, gs.BoardLength - fromFile]);
-            Assert.Equal(expect, gs.BoardData[toRank - 1, gs.BoardLength - toFile]);
+            Assert.Equal("", gs.Board.Get(rank: fromRank, file: fromFile));
+            Assert.Equal(expect, gs.Board.Get(rank: toRank, file: toFile));
         }
 
         PieceOnStand? pos = gs.WhitePieceStand.Data.FirstOrDefault(p => p.Piece == "n");
@@ -161,18 +161,18 @@ public class GameServiceTest
         gs.BlackPieceStand.Add("G");
         gs.BlackPieceStand.Add("G");
         gs.BlackPieceStand.Add("G");
-        service.UpdateBoardData(gs, "9/9/9/9/9/9/9/9/9");
+        service.SetBoardData(gs, "9/9/9/9/9/9/9/9/9");
         service.BoardDataNext(new PieceStandPosition("R*"), new Tile(1, 1), false, gs); // top - right
         service.BoardDataNext(new PieceStandPosition("R*"), new Tile(2, 2), false, gs);
         service.BoardDataNext(new PieceStandPosition("G*"), new Tile(3, 3), false, gs);
         service.BoardDataNext(new PieceStandPosition("G*"), new Tile(4, 4), false, gs);
         service.BoardDataNext(new PieceStandPosition("G*"), new Tile(9, 9), false, gs); // bottom -left
 
-        Assert.Equal("R", gs.BoardData[0, 8]);
-        Assert.Equal("R", gs.BoardData[1, 7]);
-        Assert.Equal("G", gs.BoardData[2, 6]);
-        Assert.Equal("G", gs.BoardData[3, 5]);
-        Assert.Equal("G", gs.BoardData[8, 0]);
+        Assert.Equal("R", gs.Board.Get(1, 1));
+        Assert.Equal("R", gs.Board.Get(2, 2));
+        Assert.Equal("G", gs.Board.Get(3, 3));
+        Assert.Equal("G", gs.Board.Get(4, 4));
+        Assert.Equal("G", gs.Board.Get(9, 9));
 
         PieceOnStand? rook = gs.BlackPieceStand.Data.FirstOrDefault(p => p.Piece.Equals("R"));
         Assert.Null(rook);
@@ -196,18 +196,18 @@ public class GameServiceTest
         gs.WhitePieceStand.Add("s");
         gs.WhitePieceStand.Add("s");
         gs.WhitePieceStand.Add("s");
-        service.UpdateBoardData(gs, "9/9/9/9/9/9/9/9/9");
+        service.SetBoardData(gs, "9/9/9/9/9/9/9/9/9");
         service.BoardDataNext(new PieceStandPosition("b*"), new Tile(1, 1), false, gs); // top - right
         service.BoardDataNext(new PieceStandPosition("b*"), new Tile(2, 2), false, gs);
         service.BoardDataNext(new PieceStandPosition("s*"), new Tile(3, 3), false, gs);
         service.BoardDataNext(new PieceStandPosition("s*"), new Tile(4, 4), false, gs);
         service.BoardDataNext(new PieceStandPosition("s*"), new Tile(9, 9), false, gs); // bottom -left
 
-        Assert.Equal("b", gs.BoardData[0, 8]);
-        Assert.Equal("b", gs.BoardData[1, 7]);
-        Assert.Equal("s", gs.BoardData[2, 6]);
-        Assert.Equal("s", gs.BoardData[3, 5]);
-        Assert.Equal("s", gs.BoardData[8, 0]);
+        Assert.Equal("b", gs.Board.Get(1, 1));
+        Assert.Equal("b", gs.Board.Get(2, 2));
+        Assert.Equal("s", gs.Board.Get(3, 3));
+        Assert.Equal("s", gs.Board.Get(4, 4));
+        Assert.Equal("s", gs.Board.Get(9, 9));
 
         PieceOnStand? bishop = gs.WhitePieceStand.Data.FirstOrDefault(p => p.Piece.Equals("b"));
         Assert.Null(bishop);
@@ -239,10 +239,10 @@ public class GameServiceTest
         {
             Tile from = new (fromFile, fromRank);
             Tile to = new(toFile, toRank);
-            service.UpdateBoardData(gs, sfen);
+            service.SetBoardData(gs, sfen);
             service.BoardDataNext(from, to, false, gs);
-            Assert.Equal("", gs.BoardData[fromRank - 1, gs.BoardLength - fromFile]);
-            Assert.Equal(expect, gs.BoardData[toRank - 1, gs.BoardLength - toFile]);
+            Assert.Equal("", gs.Board.Get(file: fromFile, rank: fromRank));
+            Assert.Equal(expect, gs.Board.Get(file: toFile, rank: toRank));
             gs.BlackCanMovePiece = !gs.BlackCanMovePiece;
         }
 
