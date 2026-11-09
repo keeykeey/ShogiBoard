@@ -92,11 +92,11 @@ public class GameService : IGameService
             string pieceToBeTaken = state.Board.Get(rank: to.Ranks, file: to.Files);
             state.Board.Set(rank: tile.Ranks, file: tile.Files, string.Empty);
             state.Board.Set(rank: to.Ranks, file: to.Files, piece: movingPiece);
-            if (state.BlackCanMovePiece)
+            if (WhiteOwns(pieceToBeTaken))
             {
                 state.BlackPieceStand.Add(pieceToBeTaken.Replace("+", "").ToUpper());
             }
-            else
+            else if (BlackOwns(pieceToBeTaken))
             {
                 state.WhitePieceStand.Add(pieceToBeTaken.Replace("+", "").ToLower());
             }
@@ -109,11 +109,11 @@ public class GameService : IGameService
             }
 
             state.Board.Set(rank: to.Ranks, file: to.Files, ps.PieceChar);
-            if (state.BlackCanMovePiece)
+            if (BlackOwns(ps.PieceChar))
             {
                 state.BlackPieceStand.Remove(ps.PieceChar);
             }
-            else
+            else if (WhiteOwns(ps.PieceChar))
             {
                 state.WhitePieceStand.Remove(ps.PieceChar);
             }
@@ -126,7 +126,10 @@ public class GameService : IGameService
 
     public void NextTurn(GameState gs)
     {
-        gs.BlackCanMovePiece = !gs.BlackCanMovePiece;
+        if (gs.InAGame)
+        {
+            gs.BlackCanMovePiece = !gs.BlackCanMovePiece;
+        }
     }
 
     private static bool IsValidPieceChar(char ch)
@@ -147,10 +150,30 @@ public class GameService : IGameService
 
     public bool CanPromote(Tile from, Tile to, GameState gs)
     {
-        bool canPromote = gs.BlackCanMovePiece
-            ? (from.Ranks <= BlackPromotionLine) || (to.Ranks <= BlackPromotionLine)
-            : (from.Ranks >= WhitePromotionLine) || (to.Ranks >= WhitePromotionLine);
+        string p = gs.Board.Get(rank: from.Ranks, file: from.Files) ?? " ";
+        if (BlackOwns(p) && p[0] != '+')
+        {
+            return (from.Ranks <= BlackPromotionLine) || (to.Ranks <= BlackPromotionLine);
+        }
+        else if (WhiteOwns(p) && p[0] != '+')
+        {
+            return (from.Ranks >= WhitePromotionLine) || (to.Ranks >= WhitePromotionLine);
+        }
+        else
+        {
+            return false;
+        }
+    }
 
-        return canPromote;
+    private static bool BlackOwns(string piece)
+    {
+        if (piece == string.Empty) return false;
+        return char.IsUpper(piece[0]) || (piece.Length == 2 && piece[0].Equals('+') && char.IsUpper(piece[1]));
+    }
+
+    private static bool WhiteOwns(string piece)
+    {
+        if (piece == string.Empty) return false;
+        return char.IsLower(piece[0]) || (piece.Length == 2 && piece[0].Equals('+') && char.IsLower(piece[1]));
     }
 }
