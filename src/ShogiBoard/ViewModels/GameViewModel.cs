@@ -16,6 +16,7 @@ public partial class GameViewModel : ViewModelBase
     public IGameService GameService { get; }
     public IDialogService DialogService { get; }
     private GameState GameState { get; set; }
+    public ObservableCollection<BoardRank> Board { get; set; }
     public ObservableCollection<PieceOnStand> BlackPieceStand { get; set; }
     public ObservableCollection<PieceOnStand> WhitePieceStand { get; set; }
 
@@ -26,6 +27,8 @@ public partial class GameViewModel : ViewModelBase
         DialogService  = ds;
         GameState = new();
         GameService.Init9DimBoardData(GameState);
+        Board b = GameState.Board;
+        Board = [b.A, b.B, b.C, b.D, b.E, b.F, b.G, b.H, b.I];
         BlackPieceStand = GameState.BlackPieceStand.Data;
         WhitePieceStand = GameState.WhitePieceStand.Data;
     }
@@ -146,7 +149,6 @@ public partial class GameViewModel : ViewModelBase
             await HandleBestMoveFromEngine();
         }
         MoveFrom = null;
-        ConsoleDrawBoard();
     }
 
     public void ClickPieceStand(string piece)
@@ -208,34 +210,5 @@ public partial class GameViewModel : ViewModelBase
             Response = e.Message;
             GameState.InAGame = false;
         }
-    }
-
-    private void ConsoleDrawBoard()
-    {
-        foreach (var p in WhitePieceStand)
-        {
-            Console.Write($"[{p.Piece}{p.Count}]");
-        }
-        Console.Write("\n");
-        for (int r = 1; r <= 9; ++r)
-        {
-            Console.Write($"[Rank({r})]: ");
-            for (int c = 9; c >= 1; --c)
-            {
-                string s = GameState.Board.Get(rank: r, file: c);
-                if (s == "" || s == string.Empty)
-                {
-                    s = "-";
-                }
-                Console.Write($"{s}");
-            }
-            Console.Write("\n");
-        }
-        foreach (var p in BlackPieceStand)
-        {
-            Console.Write($"[{p.Piece}{p.Count}]");
-        }
-        Console.Write("\n");
-        Console.WriteLine("------------------");
     }
 }

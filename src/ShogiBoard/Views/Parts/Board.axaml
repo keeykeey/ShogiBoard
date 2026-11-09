@@ -3,6 +3,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:ShogiBoard.ViewModels"
+             xmlns:m="using:ShogiBoard.Models"
+             xmlns:conv="using:ShogiBoard.Converters"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:DataType="vm:GameViewModel"
              x:Class="ShogiBoard.Views.Parts.Board">
@@ -10,5 +12,57 @@
                 <Image x:Name="BoardImage" Margin="0" Height="400" Width="400"
                     Source="/Assets/one/board.png"
                     PointerPressed="OnBoardPointerPressed"/>
+                <ItemsControl ItemsSource="{Binding Board}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="m:BoardRank">
+                            <Grid
+                                ColumnDefinitions="*,*,*,*,*,*,*,*,*"
+                                RowDefinitions="*"
+                                ColumnSpacing="0"
+                                RowSpacing="0"
+                                Margin="0,4,0,4">
+                                <Grid.Resources>
+                                    <conv:PieceToBitmapConverter x:Key="PieceToBitmap"/>
+                                </Grid.Resources>
+                                <Image Margin="0" Height="36" Width="36"
+                                    Grid.Row="0" Grid.Column="0"
+                                    IsHitTestVisible="False"
+                                    Source="{Binding Nine, Converter={StaticResource PieceToBitmap}}"/>
+                                <Image Margin="0" Height="36" Width="36"
+                                    Grid.Row="0" Grid.Column="1"
+                                    IsHitTestVisible="False"
+                                    Source="{Binding Eight, Converter={StaticResource PieceToBitmap}}"/>
+                                <Image Margin="0" Height="36" Width="36"
+                                    Grid.Row="0" Grid.Column="2"
+                                    IsHitTestVisible="False"
+                                    Source="{Binding Seven, Converter={StaticResource PieceToBitmap}}"/>
+                                <Image Margin="0" Height="36" Width="36"
+                                    Grid.Row="0" Grid.Column="3"
+                                    IsHitTestVisible="False"
+                                    Source="{Binding Six, Converter={StaticResource PieceToBitmap}}"/>
+                                <Image Margin="0" Height="36" Width="36"
+                                    Grid.Row="0" Grid.Column="4"
+                                    IsHitTestVisible="False"
+                                    Source="{Binding Five, Converter={StaticResource PieceToBitmap}}"/>
+                                <Image Margin="0" Height="36" Width="36"
+                                    Grid.Row="0" Grid.Column="5"
+                                    IsHitTestVisible="False"
+                                    Source="{Binding Four, Converter={StaticResource PieceToBitmap}}"/>
+                                <Image Margin="0" Height="36" Width="36"
+                                    Grid.Row="0" Grid.Column="6"
+                                    IsHitTestVisible="False"
+                                    Source="{Binding Three, Converter={StaticResource PieceToBitmap}}"/>
+                                <Image Margin="0" Height="36" Width="36"
+                                    Grid.Row="0" Grid.Column="7"
+                                    IsHitTestVisible="False"
+                                    Source="{Binding Two, Converter={StaticResource PieceToBitmap}}"/>
+                                <Image Margin="0" Height="36" Width="36"
+                                    Grid.Row="0" Grid.Column="8"
+                                    IsHitTestVisible="False"
+                                    Source="{Binding One, Converter={StaticResource PieceToBitmap}}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
             </Panel>
 </UserControl>

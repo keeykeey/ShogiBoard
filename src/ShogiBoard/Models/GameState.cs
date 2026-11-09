@@ -27,15 +27,15 @@ public class GameState(
 public class BoardRank : INotifyPropertyChanged
 {
     public int NFile = 9;
-    private string One { get; set; } = "";  // File-1 in a Rank
-    private string Two { get; set; } = "";  // File-2 in a Rank
-    private string Three { get; set; } = ""; // File-3 in a Rank
-    private string Four { get; set; } = "";  // File-4 in a Rank
-    private string Five { get; set; } = "";  // File-5 in a Rank
-    private string Six { get; set; } = "";   // File-6 in a Rank
-    private string Seven { get; set; } = ""; // File-7 in a Rank
-    private string Eight { get; set; } = ""; // File-8 in a Rank
-    private string Nine { get; set; } = "";  // File-9 in a Rank
+    public string One { get; set; } = "";  // File-1 in a Rank
+    public string Two { get; set; } = "";  // File-2 in a Rank
+    public string Three { get; set; } = ""; // File-3 in a Rank
+    public string Four { get; set; } = "";  // File-4 in a Rank
+    public string Five { get; set; } = "";  // File-5 in a Rank
+    public string Six { get; set; } = "";   // File-6 in a Rank
+    public string Seven { get; set; } = ""; // File-7 in a Rank
+    public string Eight { get; set; } = ""; // File-8 in a Rank
+    public string Nine { get; set; } = "";  // File-9 in a Rank
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
@@ -107,15 +107,15 @@ public class Board
 {
     public int NRank = 9;
     public int NFile;
-    private BoardRank A { get; set; } = new();
-    private BoardRank B { get; set; } = new();
-    private BoardRank C { get; set; } = new();
-    private BoardRank D { get; set; } = new();
-    private BoardRank E { get; set; } = new();
-    private BoardRank F { get; set; } = new();
-    private BoardRank G { get; set; } = new();
-    private BoardRank H { get; set; } = new();
-    private BoardRank I { get; set; } = new();
+    public BoardRank A { get; set; } = new();
+    public BoardRank B { get; set; } = new();
+    public BoardRank C { get; set; } = new();
+    public BoardRank D { get; set; } = new();
+    public BoardRank E { get; set; } = new();
+    public BoardRank F { get; set; } = new();
+    public BoardRank G { get; set; } = new();
+    public BoardRank H { get; set; } = new();
+    public BoardRank I { get; set; } = new();
 
     public Board()
     {
