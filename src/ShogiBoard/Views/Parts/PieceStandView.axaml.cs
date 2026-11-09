@@ -31,7 +31,7 @@ public partial class PieceStandView : UserControl
 
         if (DataContext is GameViewModel vm)
         {
-            vm.ClickPiecceStand($"{pieceName}*");
+            vm.ClickPieceStand($"{pieceName}*");
         }
     }
 }
