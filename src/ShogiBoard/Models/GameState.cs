@@ -7,13 +7,11 @@ using System.Runtime.CompilerServices;
 namespace ShogiBoard.Models;
 
 public class GameState(
-    int  boardLength = 9,
     bool inAGame = false,
     bool playerIsBlack = true,
     bool blackCanMovePiece = true)
 {
-    public int BoardLength = boardLength;
-    public string[,] BoardData = new string[boardLength, boardLength];
+    public Board Board = new();
     public PieceStand BlackPieceStand = new();
     public PieceStand WhitePieceStand = new();
     public List<Move> Moves { get; set; } = [];
@@ -23,6 +21,174 @@ public class GameState(
     public bool PlayerCanMovePiece
     {
         get => !InAGame || (PlayerIsBlack == BlackCanMovePiece);
+    }
+}
+
+public class BoardRank : INotifyPropertyChanged
+{
+    public int NFile = 9;
+    public string One { get; set; } = "";  // File-1 in a Rank
+    public string Two { get; set; } = "";  // File-2 in a Rank
+    public string Three { get; set; } = ""; // File-3 in a Rank
+    public string Four { get; set; } = "";  // File-4 in a Rank
+    public string Five { get; set; } = "";  // File-5 in a Rank
+    public string Six { get; set; } = "";   // File-6 in a Rank
+    public string Seven { get; set; } = ""; // File-7 in a Rank
+    public string Eight { get; set; } = ""; // File-8 in a Rank
+    public string Nine { get; set; } = "";  // File-9 in a Rank
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    public string Get(int file) => file switch
+    {
+        1 => One,
+        2 => Two,
+        3 => Three,
+        4 => Four,
+        5 => Five,
+        6 => Six,
+        7 => Seven,
+        8 => Eight,
+        9 => Nine,
+        _ => throw new System.Exception($"Got unexpected file({file})")
+    };
+
+    public void Set(int file, string piece)
+    {
+        switch (file)
+        {
+            case 1:
+                One = piece;
+                NotifyPropertyChanged(nameof(One));
+                break;
+            case 2:
+                Two = piece;
+                NotifyPropertyChanged(nameof(Two));
+                break;
+            case 3:
+                Three = piece;
+                NotifyPropertyChanged(nameof(Three));
+                break;
+            case 4:
+                Four = piece;
+                NotifyPropertyChanged(nameof(Four));
+                break;
+            case 5:
+                Five = piece;
+                NotifyPropertyChanged(nameof(Five));
+                break;
+            case 6:
+                Six = piece;
+                NotifyPropertyChanged(nameof(Six));
+                break;
+            case 7:
+                Seven = piece;
+                NotifyPropertyChanged(nameof(Seven));
+                break;
+            case 8:
+                Eight = piece;
+                NotifyPropertyChanged(nameof(Eight));
+                break;
+            case 9:
+                Nine = piece;
+                NotifyPropertyChanged(nameof(Nine));
+                break;
+            default:
+                throw new System.Exception($"Got unexpected file({file})");
+        }
+    }
+}
+
+public class Board
+{
+    public int NRank = 9;
+    public int NFile;
+    public BoardRank A { get; set; } = new();
+    public BoardRank B { get; set; } = new();
+    public BoardRank C { get; set; } = new();
+    public BoardRank D { get; set; } = new();
+    public BoardRank E { get; set; } = new();
+    public BoardRank F { get; set; } = new();
+    public BoardRank G { get; set; } = new();
+    public BoardRank H { get; set; } = new();
+    public BoardRank I { get; set; } = new();
+
+    public Board()
+    {
+        NFile = A.NFile;
+    }
+
+
+    public string Get(int rank, int file) => rank switch
+    {
+        1 => A.Get(file),
+        2 => B.Get(file),
+        3 => C.Get(file),
+        4 => D.Get(file),
+        5 => E.Get(file),
+        6 => F.Get(file),
+        7 => G.Get(file),
+        8 => H.Get(file),
+        9 => I.Get(file),
+        _ => throw new System.Exception($"Got unexpected rank({rank})")
+    };
+
+    public void Set(int rank, int file, string piece)
+    {
+        switch (rank)
+        {
+            case 1:
+                A.Set(file, piece);
+                break;
+            case 2:
+                B.Set(file, piece);
+                break;
+            case 3:
+                C.Set(file, piece);
+                break;
+            case 4:
+                D.Set(file, piece);
+                break;
+            case 5:
+                E.Set(file, piece);
+                break;
+            case 6:
+                F.Set(file, piece);
+                break;
+            case 7:
+                G.Set(file, piece);
+                break;
+            case 8:
+                H.Set(file, piece);
+                break;
+            case 9:
+                I.Set(file, piece);
+                break;
+            default:
+                throw new System.Exception($"Got unexpected file({file})");
+        }
+    }
+}
+
+public class PieceOnBoard(string piece) : INotifyPropertyChanged
+{
+    public string Piece { get; set; } = piece;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+
+    public void Set(string piece)
+    {
+        Piece = piece;
+        NotifyPropertyChanged(nameof(Piece));
     }
 }
 

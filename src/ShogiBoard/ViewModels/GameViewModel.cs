@@ -14,20 +14,21 @@ public partial class GameViewModel : ViewModelBase
 {
     public IEngineCommunicationService EngineCommunicator { get; }
     public IGameService GameService { get; }
+    public IDialogService DialogService { get; }
     private GameState GameState { get; set; }
-    [ObservableProperty]
-    public partial ObservableCollection<PieceOnStand> BlackPieceStand { get; set; }
+    public ObservableCollection<BoardRank> Board { get; set; }
+    public ObservableCollection<PieceOnStand> BlackPieceStand { get; set; }
+    public ObservableCollection<PieceOnStand> WhitePieceStand { get; set; }
 
-    [ObservableProperty]
-    public partial ObservableCollection<PieceOnStand> WhitePieceStand { get; set; }
-
-
-    public GameViewModel(IEngineCommunicationService ecs, IGameService gs)
+    public GameViewModel(IEngineCommunicationService ecs, IGameService gs, IDialogService ds)
     {
         EngineCommunicator = ecs;
         GameService  = gs;
+        DialogService  = ds;
         GameState = new();
         GameService.Init9DimBoardData(GameState);
+        Board b = GameState.Board;
+        Board = [b.A, b.B, b.C, b.D, b.E, b.F, b.G, b.H, b.I];
         BlackPieceStand = GameState.BlackPieceStand.Data;
         WhitePieceStand = GameState.WhitePieceStand.Data;
     }
@@ -64,8 +65,8 @@ public partial class GameViewModel : ViewModelBase
         }
 
         // TODO: let user to select black or white
-        ClearViewModelState();
         GameState = new(inAGame: true, playerIsBlack: true, blackCanMovePiece: true);
+        ClearViewModelState(GameState);
         GameService.Init9DimBoardData(GameState);
 
         EngineCommunicator.NewGame();
@@ -95,8 +96,8 @@ public partial class GameViewModel : ViewModelBase
     private void InitializeBoard()
     {
         if (GameState.InAGame) return;
-        ClearViewModelState();
         GameState = new();
+        ClearViewModelState(GameState);
         GameService.Init9DimBoardData(GameState);
     }
 
@@ -123,10 +124,13 @@ public partial class GameViewModel : ViewModelBase
         {
             if (from.Equals(pos)) return;
 
-            bool canPlayerPromote = GameService.CanPromote(from, pos, GameState);
-            // TODO let player to choose if promote or not via UI.
-            playerDoPromote = canPlayerPromote;
-
+            if (GameService.CanPromote(from, pos, GameState))
+            {
+                playerDoPromote = await DialogService.ShowConfirmAsync(
+                    title: "Do you promote ?", message: "Do you promote ?",
+                    yes: "yes", no: "no", h: 120, w: 240
+                );
+            }
         }
         else if (MoveFrom is PieceStandPosition)
         {
@@ -145,21 +149,20 @@ public partial class GameViewModel : ViewModelBase
             await HandleBestMoveFromEngine();
         }
         MoveFrom = null;
-        ConsoleDrawBoard();
     }
 
-    public void ClickPiecceStand(string piece)
+    public void ClickPieceStand(string piece)
     {
         if (!GameState.PlayerCanMovePiece) return;
         PieceStandPosition psp = new(piece);
         MoveFrom = psp;
     }
 
-    private void ClearViewModelState()
+    private void ClearViewModelState(GameState gs)
     {
         MoveFrom = null;
-        BlackPieceStand = GameState.BlackPieceStand.Data;
-        WhitePieceStand = GameState.WhitePieceStand.Data;
+        BlackPieceStand = gs.BlackPieceStand.Data;
+        WhitePieceStand = gs.WhitePieceStand.Data;
     }
 
     private void ClearMoveFrom()
@@ -207,34 +210,5 @@ public partial class GameViewModel : ViewModelBase
             Response = e.Message;
             GameState.InAGame = false;
         }
-    }
-
-    private void ConsoleDrawBoard()
-    {
-        foreach (var p in WhitePieceStand)
-        {
-            Console.Write($"[{p.Piece}{p.Count}]");
-        }
-        Console.Write("\n");
-        for (int r = 0; r < 9; ++r)
-        {
-            Console.Write($"[Rank({r + 1})]: ");
-            for (int c = 0; c < 9; ++c)
-            {
-                string s = GameState.BoardData[r, c];
-                if (s == "" || s == string.Empty)
-                {
-                    s = "-";
-                }
-                Console.Write($"{s}");
-            }
-            Console.Write("\n");
-        }
-        foreach (var p in BlackPieceStand)
-        {
-            Console.Write($"[{p.Piece}{p.Count}]");
-        }
-        Console.Write("\n");
-        Console.WriteLine("------------------");
     }
 }

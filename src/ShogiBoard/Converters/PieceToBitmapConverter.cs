@@ -8,7 +8,7 @@ using Avalonia.Platform;
 namespace ShogiBoard.Converters;
 
 /// <summary>
-/// Converts a USI piece string (e.g. "P" for black pawn, "p" for white pawn) to its image.
+/// Converts a USI piece string (e.g. "P" for black pawn, "p" for white pawn, "+P" for black promoted pawn, "+p" for white promoted pawn) to its image.
 /// </summary>
 public class PieceToBitmapConverter : IValueConverter
 {
@@ -30,14 +30,17 @@ public class PieceToBitmapConverter : IValueConverter
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is not string piece || piece.Length != 1) return null;
+        if (value is not string piece || piece.Length < 1 || piece.Length > 2) return null;
+        if (piece.Length == 2 && !piece[0].Equals('+')) return null;
         if (Cache.TryGetValue(piece, out Bitmap? cached)) return cached;
 
-        char c = piece[0];
+        int charIndex = piece.Length - 1;
+        char c = piece[charIndex];
         if (!Names.TryGetValue(char.ToUpperInvariant(c), out string? name)) return null;
         string side = char.IsUpper(c) ? "black" : "white";
+        string promote = charIndex == 0 ? "" : "_prom";
 
-        Uri uri = new($"{BasePath}/{side}_{name}.png");
+        Uri uri = new($"{BasePath}/{side}{promote}_{name}.png");
         Bitmap bitmap = new(AssetLoader.Open(uri));
         Cache[piece] = bitmap;
         return bitmap;
