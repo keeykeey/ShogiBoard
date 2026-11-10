@@ -55,7 +55,7 @@ public class EngineCommunicationService : IEngineCommunicationService
 
         try
         {
-            await SendAsync(UsiMessage.USI, response => response == UsiMessage.USI_OK);
+            await SendAsync(UsiMessage.USI, response => response == UsiMessage.USI_OK, TimeSpan.FromSeconds(5));
             await SendAsync(UsiMessage.IS_READY, response => response == UsiMessage.READY_OK);
         }
         catch

@@ -16,6 +16,7 @@
                 <Button Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" Command="{Binding NewGameCommand}">New Game</Button>
                 <Button Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" Command="{Binding GameEndCommand}">Game End</Button>
                 <Button Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" Command="{Binding InitializeBoardCommand}">Initialize Board</Button>
+                <Button Grid.Row="2" Grid.Column="1" HorizontalAlignment="Left" Click="SelectEngine">Select Engine</Button>
             </Grid>
             <TextBox Text="{Binding Message}"/>
             <Button HorizontalAlignment="Center" Command="{Binding SendMessageCommand}">SendMessage</Button>

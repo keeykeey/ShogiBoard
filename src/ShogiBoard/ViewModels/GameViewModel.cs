@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -33,6 +32,8 @@ public partial class GameViewModel : ViewModelBase
         WhitePieceStand = GameState.WhitePieceStand.Data;
     }
 
+    private string EnginePath { get; set; } = string.Empty;
+
     [ObservableProperty]
     public partial IPosition? MoveFrom { get; set; } = null;
 
@@ -45,14 +46,25 @@ public partial class GameViewModel : ViewModelBase
     [RelayCommand]
     private async Task StartEngine()
     {
-        string executablePath = Path.Combine(AppContext.BaseDirectory, "engine", "Lesserkai");
+        if (EnginePath == string.Empty)
+        {
+            await DialogService.ShowErrorAsync(title: "Engine is not selected", message: "Please select engine path", onCloseText: "ok", h: 120, w: 240);
+            return;
+        }
+
         try
         {
-            await EngineCommunicator.StartAsync(executablePath, ResponseReceived);
+            await EngineCommunicator.StartAsync(EnginePath, ResponseReceived);
+        }
+        catch (TimeoutException e)
+        {
+            Response = e.Message;
+            await DialogService.ShowErrorAsync(title: "Start engine timeout", message: $"Please check if engine is valid.\nError message: {Response}", onCloseText: "ok", h: 120, w: 240);
         }
         catch (Exception e)
         {
             Response = e.Message;
+            await DialogService.ShowErrorAsync(title: "Start engine failed", message: $"Error message: {Response}", onCloseText: "ok", h: 120, w: 240);
         }
     }
 
@@ -153,6 +165,11 @@ public partial class GameViewModel : ViewModelBase
         if (!GameState.PlayerCanMovePiece) return;
         PieceStandPosition psp = new(piece);
         MoveFrom = psp;
+    }
+
+    public void SetEnginePath(string path)
+    {
+        EnginePath = path;
     }
 
     private void ClearMoveFrom()
