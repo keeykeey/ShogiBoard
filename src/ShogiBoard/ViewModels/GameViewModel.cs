@@ -65,9 +65,7 @@ public partial class GameViewModel : ViewModelBase
         }
 
         // TODO: let user to select black or white
-        GameState = new(inAGame: true, playerIsBlack: true, blackCanMovePiece: true);
-        ClearViewModelState(GameState);
-        GameService.Init9DimBoardData(GameState);
+        GameService.InitGameState(gameState: GameState, inAGame: true, playerIsBlack: true, blackCanMovePiece: true);
 
         EngineCommunicator.NewGame();
     }
@@ -96,9 +94,8 @@ public partial class GameViewModel : ViewModelBase
     private void InitializeBoard()
     {
         if (GameState.InAGame) return;
-        GameState = new();
-        ClearViewModelState(GameState);
-        GameService.Init9DimBoardData(GameState);
+        // TODO: let user to select black or white
+        GameService.InitGameState(gameState: GameState, inAGame: false, playerIsBlack: true, blackCanMovePiece: true);
     }
 
     private void ResponseReceived(string m)
@@ -158,13 +155,6 @@ public partial class GameViewModel : ViewModelBase
         MoveFrom = psp;
     }
 
-    private void ClearViewModelState(GameState gs)
-    {
-        MoveFrom = null;
-        BlackPieceStand = gs.BlackPieceStand.Data;
-        WhitePieceStand = gs.WhitePieceStand.Data;
-    }
-
     private void ClearMoveFrom()
     {
         MoveFrom = null;
@@ -200,7 +190,6 @@ public partial class GameViewModel : ViewModelBase
             {
                 Move bm = new(bestMove, GameState.BlackCanMovePiece);
                 GameState.Moves.Add(bm);
-                Console.WriteLine(bm);
                 GameService.BoardDataNext(bm.MoveFrom, bm.MoveTo, bm.DoPromote, GameState);
                 GameService.NextTurn(GameState);
             }

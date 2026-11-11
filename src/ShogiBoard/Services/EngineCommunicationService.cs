@@ -128,7 +128,6 @@ public class EngineCommunicationService : IEngineCommunicationService
     {
         IEnumerable<string> moves = _moves.Select(m => m.ToString());
         string sfen = UsiMessage.SFEN_BASE_TEXT + string.Join(" ", moves);
-        Console.WriteLine(sfen);
         return sfen;
     }
 
