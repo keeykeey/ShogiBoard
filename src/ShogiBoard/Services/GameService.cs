@@ -1,12 +1,15 @@
+using System.Linq;
 using ShogiBoard.Models;
 
 namespace ShogiBoard.Services;
 
 public interface IGameService
 {
+    void InitGameState(GameState gameState, bool inAGame, bool playerIsBlack, bool blackCanMovePiece);
     void Init9DimBoardData(GameState gameState);
     void SetBoardData(GameState gameState, string sfenBoardText);
     void BoardDataNext(IPosition from, Tile to, bool promote, GameState state);
+    void InitPieceStand(GameState gameState);
     void NextTurn(GameState state);
     bool IsValidMove(IPosition from, IPosition to);
     bool CanPromote(Tile fromTileRank, Tile destTileRank, GameState state);
@@ -17,6 +20,16 @@ public class GameService : IGameService
     private const string startPos9Dim = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL";
     private int BlackPromotionLine { get; set; } = 3;
     private int WhitePromotionLine { get; set; } = 7;
+
+    public void InitGameState(GameState gameState, bool inAGame, bool playerIsBlack, bool blackCanMovePiece)
+    {
+        gameState.InAGame = inAGame;
+        gameState.PlayerIsBlack = playerIsBlack;
+        gameState.BlackCanMovePiece = blackCanMovePiece;
+        gameState.Moves = [];
+        Init9DimBoardData(gameState);
+        InitPieceStand(gameState);
+    }
 
     public void Init9DimBoardData(GameState gameState)
     {
@@ -121,6 +134,18 @@ public class GameService : IGameService
         else
         {
             throw new System.Exception("Unexpected Operation");
+        }
+    }
+
+    public void InitPieceStand(GameState gameState)
+    {
+        foreach (var p in gameState.BlackPieceStand.Data.ToList())
+        {
+            gameState.BlackPieceStand.Data.Remove(p);
+        }
+        foreach (var p in gameState.WhitePieceStand.Data.ToList())
+        {
+            gameState.WhitePieceStand.Data.Remove(p);
         }
     }
 
