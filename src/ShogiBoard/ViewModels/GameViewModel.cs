@@ -69,17 +69,26 @@ public partial class GameViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void NewGame()
+    private async Task NewGame()
     {
         if (GameState.InAGame)
         {
+            bool ok = await DialogService.ShowConfirmAsync(title: "Start new game", "Are you sure you quit current game and start new?", yes: "yes", no: "no", h: 120, w: 240);
+            if (!ok) return;
+
             EngineCommunicator.GameDraw();
         }
 
-        // TODO: let user to select black or white
-        GameService.InitGameState(gameState: GameState, inAGame: true, playerIsBlack: true, blackCanMovePiece: true);
+        bool playerIsBlack = await DialogService.ShowConfirmAsync(title: "black or white", "Choose black or white", yes: "black", no: "white", h: 120, w: 240);
+
+        GameService.InitGameState(gameState: GameState, inAGame: true, playerIsBlack: playerIsBlack, blackCanMovePiece: true);
 
         EngineCommunicator.NewGame();
+
+        if (!playerIsBlack)
+        {
+            await HandleBestMoveFromEngine();
+        }
     }
 
     [RelayCommand]
@@ -103,10 +112,13 @@ public partial class GameViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void InitializeBoard()
+    private async Task InitializeBoard()
     {
-        if (GameState.InAGame) return;
-        // TODO: let user to select black or white
+        if (GameState.InAGame)
+        {
+            await DialogService.ShowErrorAsync(title: "Error", "You can't initialize board while you are in a game", onCloseText: "ok", h: 120, w: 240);
+            return;
+        }
         GameService.InitGameState(gameState: GameState, inAGame: false, playerIsBlack: true, blackCanMovePiece: true);
     }
 
