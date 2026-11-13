@@ -5,7 +5,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ShogiBoard.Models;
 using ShogiBoard.Services;
+using ShogiBoard.Helper;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace ShogiBoard.ViewModels;
 
@@ -18,21 +20,28 @@ public partial class GameViewModel : ViewModelBase
     public ObservableCollection<BoardRank> Board { get; set; }
     public ObservableCollection<PieceOnStand> BlackPieceStand { get; set; }
     public ObservableCollection<PieceOnStand> WhitePieceStand { get; set; }
+    [ObservableProperty] public partial GameTime TimeSetting { get; set; }
+    [ObservableProperty] public partial GameTime BlackTimeLeft { get; set; }
+    [ObservableProperty] public partial GameTime WhiteTimeLeft { get; set; }
 
     public GameViewModel(IEngineCommunicationService ecs, IGameService gs, IDialogService ds)
     {
         EngineCommunicator = ecs;
         GameService  = gs;
         DialogService  = ds;
-        GameState = new();
+        GameState = new(byoyomi: 10, timeControlMin: 0, timeControlSec: 0);
         GameService.Init9DimBoardData(GameState);
         Board b = GameState.Board;
         Board = [b.A, b.B, b.C, b.D, b.E, b.F, b.G, b.H, b.I];
         BlackPieceStand = GameState.BlackPieceStand.Data;
         WhitePieceStand = GameState.WhitePieceStand.Data;
+        TimeSetting = GameState.TimeSetting;
+        BlackTimeLeft = GameState.BlackTimeLeft;
+        WhiteTimeLeft = GameState.WhiteTimeLeft;
     }
 
     private string EnginePath { get; set; } = string.Empty;
+    private CancellationTokenSource Cts { get; set; } = new();
 
     [ObservableProperty]
     public partial IPosition? MoveFrom { get; set; } = null;
@@ -82,8 +91,11 @@ public partial class GameViewModel : ViewModelBase
         bool playerIsBlack = await DialogService.ShowConfirmAsync(title: "black or white", "Choose black or white", yes: "black", no: "white", h: 120, w: 240);
 
         GameService.InitGameState(gameState: GameState, inAGame: true, playerIsBlack: playerIsBlack, blackCanMovePiece: true);
+        BlackTimeLeft.Set(TimeSetting.ByoyomiSec, TimeSetting.TimeControlMin, TimeSetting.TimeControlSec);
+        WhiteTimeLeft.Set(TimeSetting.ByoyomiSec, TimeSetting.TimeControlMin, TimeSetting.TimeControlSec);
 
         EngineCommunicator.NewGame();
+        CountGameTime(Cts.Token).Background();
 
         if (!playerIsBlack)
         {
@@ -94,6 +106,7 @@ public partial class GameViewModel : ViewModelBase
     [RelayCommand]
     private void GameEnd()
     {
+        Cts.Cancel();
         GameState.InAGame = false;
         EngineCommunicator.GameDraw();
     }
@@ -109,6 +122,7 @@ public partial class GameViewModel : ViewModelBase
     {
         EngineCommunicator.Quit();
         ClearMoveFrom();
+        GameState.InAGame = false;
     }
 
     [RelayCommand]
@@ -202,13 +216,22 @@ public partial class GameViewModel : ViewModelBase
         GameState.Moves.Add(move);
         GameService.BoardDataNext(move.MoveFrom, move.MoveTo, move.DoPromote, GameState);
         GameService.NextTurn(GameState);
+
+        if (GameState.InAGame)
+        {
+            Cts.Cancel();
+            Cts = new();
+            CountGameTime(Cts.Token).Background();
+        }
     }
 
     private async Task HandleBestMoveFromEngine()
     {
         try
         {
-            string bestMoveResponse = await EngineCommunicator.SendSfen(GameState.Moves);
+            string bestMoveResponse = await EngineCommunicator.SendSfen(
+                GameState.Moves,
+                GameState.BlackCanMovePiece ? BlackTimeLeft : WhiteTimeLeft);
             string bestMove = UsiParser.ParseBestmove(bestMoveResponse);
 
             if (bestMove == UsiMessage.RESIGN)
@@ -221,12 +244,91 @@ public partial class GameViewModel : ViewModelBase
                 GameState.Moves.Add(bm);
                 GameService.BoardDataNext(bm.MoveFrom, bm.MoveTo, bm.DoPromote, GameState);
                 GameService.NextTurn(GameState);
+                if (GameState.InAGame)
+                {
+                    Cts.Cancel();
+                    Cts = new();
+                    CountGameTime(Cts.Token).Background();
+                }
             }
         }
         catch (Exception e)
         {
             Response = e.Message;
             GameState.InAGame = false;
+        }
+    }
+
+    private async Task CountGameTime(CancellationToken cts)
+    {
+        GameTime timeLeft = GameState.BlackCanMovePiece ? BlackTimeLeft : WhiteTimeLeft;
+        timeLeft.Set(
+            byoyomi:        TimeSetting.ByoyomiSec,
+            timeControlMin: timeLeft.TimeControlMin,
+            timeControlSec: timeLeft.TimeControlSec
+        );
+
+        if (timeLeft.NoTimeLeft)
+        {
+            bool ok = await CountByoyomi(timeLeft, cts);
+            if (!ok)
+            {
+                GameEnd();
+                // TODO: create more appropriate dialog
+                await DialogService.ShowErrorAsync(title: "Game End", message: "You lose", onCloseText: "ok", h: 120, w: 200);
+            }
+        }
+        else
+        {
+            await CountTimeControl(timeLeft, cts);
+            if (timeLeft.NoTimeLeft)
+            {
+                bool ok = await CountByoyomi(timeLeft, cts);
+                if (!ok)
+                {
+                    GameEnd();
+                    // TODO: create more appropriate dialog
+                    await DialogService.ShowErrorAsync(title: "Game End", message: "You lose", onCloseText: "ok", h: 120, w: 200);
+                }
+            }
+            else
+            {
+                throw new Exception("Unexpected behavior of CountGameTime");
+            }
+        }
+    }
+
+    private async Task<bool> CountByoyomi(GameTime timeLeft, CancellationToken cancellationToken)
+    {
+        int c = TimeSetting.ByoyomiSec;
+        for (int i = 0; i < c; ++i)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            timeLeft.Set(
+                byoyomi: timeLeft.ByoyomiSec - 1,
+                timeControlMin: null,
+                timeControlSec: null
+            );
+            await Task.Delay(1000, cancellationToken);
+        }
+
+        return false;
+    }
+
+    private async Task CountTimeControl(GameTime timeLeft, CancellationToken cancellationToken)
+    {
+        int c = timeLeft.TimeControlMin * 60 + timeLeft.TimeControlSec;
+        for (int i = 0; i < c; ++i)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            int byou = timeLeft.TimeControlSec == 0 ? 59 : timeLeft.TimeControlSec - 1;
+            int min = byou == 59 ? timeLeft.TimeControlMin - 1 : timeLeft.TimeControlMin;
+            timeLeft.Set(
+                byoyomi: timeLeft.ByoyomiSec,
+                timeControlMin: min,
+                timeControlSec: byou
+            );
+            await Task.Delay(1000, cancellationToken);
         }
     }
 }

@@ -13,7 +13,7 @@ public interface IEngineCommunicationService
     void Send(string m);
     Task<string> SendAsync(string m, Func<string, bool> isResponse, TimeSpan? timeout = null);
     Task StartAsync(string executablePath, Action<string>? responseReceived);
-    Task<string> SendSfen(List<Move> moves);
+    Task<string> SendSfen(List<Move> moves, GameTime ts);
     string CreateSfen(List<Move> moves);
     void Quit();
     void Kill();
@@ -112,14 +112,14 @@ public class EngineCommunicationService : IEngineCommunicationService
 
     }
 
-    public async Task<string> SendSfen(List<Move> moves)
+    public async Task<string> SendSfen(List<Move> moves, GameTime ts)
     {
         string sfen = CreateSfen(moves);
         Send(sfen);
         string bestMove = await SendAsync(
-            $"{UsiMessage.GO} btime 0 wtime 0 byoyomi 3000",  // TODO
+            $"{UsiMessage.GO} btime {ts.TimeControlMiliSec} wtime {ts.TimeControlMiliSec} byoyomi {ts.ByoyomiMiliSec}",
             response => response.StartsWith(UsiMessage.BEST_MOVE),
-            TimeSpan.FromMinutes(1)  // TODO
+            TimeSpan.FromMinutes((ts.ByoyomiMiliSec + 3000)/ 1000)
         );
         return bestMove;
     }

@@ -7,6 +7,9 @@ using System.Runtime.CompilerServices;
 namespace ShogiBoard.Models;
 
 public class GameState(
+    int byoyomi,
+    int timeControlMin,
+    int timeControlSec,
     bool inAGame = false,
     bool playerIsBlack = true,
     bool blackCanMovePiece = true)
@@ -22,6 +25,9 @@ public class GameState(
     {
         get => !InAGame || (PlayerIsBlack == BlackCanMovePiece);
     }
+    public GameTime TimeSetting = new(byoyomi, timeControlMin, timeControlSec);
+    public GameTime BlackTimeLeft = new(byoyomi, timeControlMin, timeControlSec);
+    public GameTime WhiteTimeLeft = new(byoyomi, timeControlMin, timeControlSec);
 }
 
 public class BoardRank : INotifyPropertyChanged
@@ -262,4 +268,41 @@ public class PieceOnStand(string piece, int count): INotifyPropertyChanged
         Count -= 1;
         NotifyPropertyChanged(nameof(Count));
     }
+}
+
+public class GameTime(int byoyomi, int timeControlMin, int timeControlSec) : INotifyPropertyChanged {
+    public int ByoyomiSec { get; set; } = byoyomi;
+    public int TimeControlMin { get; set; } = timeControlMin;
+    public int TimeControlSec { get; set; } = timeControlSec;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    public void Set(int? byoyomi, int? timeControlMin, int? timeControlSec)
+    {
+        if (byoyomi is int b)
+        {
+            ByoyomiSec = b;
+            NotifyPropertyChanged(nameof(ByoyomiSec));
+        }
+
+        if (timeControlMin is int tcm)
+        {
+            TimeControlMin = tcm;
+            NotifyPropertyChanged(nameof(TimeControlMin));
+        }
+
+        if (timeControlSec is int tcs)
+        {
+            TimeControlSec = tcs;
+            NotifyPropertyChanged(nameof(TimeControlSec));
+        }
+    }
+
+    public int ByoyomiMiliSec => ByoyomiSec * 1000;
+    public int TimeControlMiliSec => TimeControlMin * 1000 * 60 + TimeControlSec * 1000;
+    public bool NoTimeLeft => TimeControlMin == 0 && TimeControlSec == 0;
 }
