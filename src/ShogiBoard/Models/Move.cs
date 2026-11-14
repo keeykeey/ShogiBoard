@@ -15,6 +15,7 @@ public struct Move
         MoveFrom = moveFrom;
         MoveTo = moveTo;
         DoPromote = doPromote;
+        DoPromoteChar = doPromote ? "+" : "";
     }
 
     public Move(string position, bool turnIsBlack)

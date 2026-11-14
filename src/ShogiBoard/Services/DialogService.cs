@@ -12,6 +12,7 @@ public interface IDialogService
 {
     Task<bool> ShowConfirmAsync(string title, string message, string yes, string no, int h, int w);
     Task<bool> ShowAskPromoteAsync(string piece);
+    Task<bool> ShowMessageAsync(string title, string message, string onCloseText, int h, int w);
 }
 
 public class DialogService : IDialogService
@@ -67,4 +68,32 @@ public class DialogService : IDialogService
         return result;
     }
 
+    public async Task<bool> ShowMessageAsync(
+        string title,
+        string message,
+        string onCloseText = "close",
+        int h = 200,
+        int w = 200
+    ) {
+        Window? ownerWindow = null;
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            ownerWindow = desktop.Windows.FirstOrDefault(w => w.IsActive) ?? desktop.MainWindow;
+        }
+
+        if (ownerWindow == null) return false;
+
+        var dialog = new ShowMessage();
+        var vm = new ShowMessageViewModel(
+            dialog:dialog,
+            title:title,
+            message:message,
+            onCloseText: onCloseText,
+            height: h,
+            width: w
+        );
+        dialog.DataContext = vm;
+        bool result = await dialog.ShowDialog<bool>(ownerWindow);
+        return result;
+    }
 }
