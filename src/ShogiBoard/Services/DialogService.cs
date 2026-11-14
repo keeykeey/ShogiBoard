@@ -12,7 +12,7 @@ public interface IDialogService
 {
     Task<bool> ShowConfirmAsync(string title, string message, string yes, string no, int h, int w);
     Task<bool> ShowAskPromoteAsync(string piece);
-    Task<bool> ShowErrorAsync(string title, string message, string onCloseText, int h, int w);
+    Task<bool> ShowMessageAsync(string title, string message, string onCloseText, int h, int w);
 }
 
 public class DialogService : IDialogService
@@ -68,7 +68,7 @@ public class DialogService : IDialogService
         return result;
     }
 
-    public async Task<bool> ShowErrorAsync(
+    public async Task<bool> ShowMessageAsync(
         string title,
         string message,
         string onCloseText = "close",
@@ -83,8 +83,8 @@ public class DialogService : IDialogService
 
         if (ownerWindow == null) return false;
 
-        var dialog = new ShowError();
-        var vm = new ShowErrorViewModel(
+        var dialog = new ShowMessage();
+        var vm = new ShowMessageViewModel(
             dialog:dialog,
             title:title,
             message:message,

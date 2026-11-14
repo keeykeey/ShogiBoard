@@ -57,7 +57,7 @@ public partial class GameViewModel : ViewModelBase
     {
         if (EnginePath == string.Empty)
         {
-            await DialogService.ShowErrorAsync(title: "Engine is not selected", message: "Please select engine path", onCloseText: "ok", h: 120, w: 240);
+            await DialogService.ShowMessageAsync(title: "Engine is not selected", message: "Please select engine path", onCloseText: "ok", h: 120, w: 240);
             return;
         }
 
@@ -68,12 +68,12 @@ public partial class GameViewModel : ViewModelBase
         catch (TimeoutException e)
         {
             Response = e.Message;
-            await DialogService.ShowErrorAsync(title: "Start engine timeout", message: $"Please check if engine is valid.\nError message: {Response}", onCloseText: "ok", h: 120, w: 240);
+            await DialogService.ShowMessageAsync(title: "Start engine timeout", message: $"Please check if engine is valid.\nError message: {Response}", onCloseText: "ok", h: 120, w: 240);
         }
         catch (Exception e)
         {
             Response = e.Message;
-            await DialogService.ShowErrorAsync(title: "Start engine failed", message: $"Error message: {Response}", onCloseText: "ok", h: 120, w: 240);
+            await DialogService.ShowMessageAsync(title: "Start engine failed", message: $"Error message: {Response}", onCloseText: "ok", h: 120, w: 240);
         }
     }
 
@@ -130,7 +130,7 @@ public partial class GameViewModel : ViewModelBase
     {
         if (GameState.InAGame)
         {
-            await DialogService.ShowErrorAsync(title: "Error", "You can't initialize board while you are in a game", onCloseText: "ok", h: 120, w: 240);
+            await DialogService.ShowMessageAsync(title: "Error", "You can't initialize board while you are in a game", onCloseText: "ok", h: 120, w: 240);
             return;
         }
         GameService.InitGameState(gameState: GameState, inAGame: false, playerIsBlack: true, blackCanMovePiece: true);
@@ -237,6 +237,8 @@ public partial class GameViewModel : ViewModelBase
             if (bestMove == UsiMessage.RESIGN)
             {
                 GameState.InAGame = false;
+                Cts.Cancel();
+                await DialogService.ShowMessageAsync(title: "Game end", message: "You win !", onCloseText: "ok", h: 120, w: 200);
             }
             else
             {
@@ -275,7 +277,7 @@ public partial class GameViewModel : ViewModelBase
             {
                 GameEnd();
                 // TODO: create more appropriate dialog
-                await DialogService.ShowErrorAsync(title: "Game End", message: "You lose", onCloseText: "ok", h: 120, w: 200);
+                await DialogService.ShowMessageAsync(title: "Game End", message: "You lose", onCloseText: "ok", h: 120, w: 200);
             }
         }
         else
@@ -288,7 +290,7 @@ public partial class GameViewModel : ViewModelBase
                 {
                     GameEnd();
                     // TODO: create more appropriate dialog
-                    await DialogService.ShowErrorAsync(title: "Game End", message: "You lose", onCloseText: "ok", h: 120, w: 200);
+                    await DialogService.ShowMessageAsync(title: "Game End", message: "You lose", onCloseText: "ok", h: 120, w: 200);
                 }
             }
             else

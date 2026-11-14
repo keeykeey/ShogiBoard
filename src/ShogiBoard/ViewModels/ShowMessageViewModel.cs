@@ -1,10 +1,9 @@
-
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.Input;
 
 namespace ShogiBoard.ViewModels;
 
-public partial class ShowErrorViewModel(
+public partial class ShowMessageViewModel(
     Window dialog,
     string title,
     string message,

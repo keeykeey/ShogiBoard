@@ -2,9 +2,9 @@ using Avalonia.Controls;
 
 namespace ShogiBoard.Views.Dialog;
 
-public partial class ShowError : Window
+public partial class ShowMessage : Window
 {
-    public ShowError()
+    public ShowMessage()
     {
         InitializeComponent();
     }
