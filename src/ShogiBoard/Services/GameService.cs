@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using ShogiBoard.Models;
 
@@ -12,6 +13,7 @@ public interface IGameService
     void InitPieceStand(GameState gameState);
     void NextTurn(GameState state);
     bool IsValidMove(IPosition from, IPosition to);
+    bool IsSamePlayersPiece(IPosition from, Tile to, GameState gameState);
     bool CanPromote(Tile fromTileRank, Tile destTileRank, GameState state);
 }
 
@@ -94,6 +96,35 @@ public class GameService : IGameService
     {
         // TODO
         return true;
+    }
+    
+    public bool IsSamePlayersPiece(IPosition from, Tile to, GameState gameState)
+    {
+        string tpiece = gameState.Board.Get(rank: to.Ranks, file: to.Files);
+        string fpiece;
+        if (from is Tile tfrom)
+        {
+            fpiece = gameState.Board.Get(rank: tfrom.Ranks, file: tfrom.Files);
+        }
+        else if (from is PieceStandPosition pfrom)
+        {
+            fpiece = pfrom.PieceChar;
+        }
+        else
+        {
+            throw new ArgumentException("Got unexpected type of From");
+        }
+
+        char chTo = tpiece.Length > 0 ? tpiece[0] : ' ';
+        if (fpiece.Length <= 0)
+        {
+            throw new Exception("from position should have piece string");
+        }
+
+        if (chTo == ' ') return false;
+
+        return char.IsLower(chTo) == char.IsLower(fpiece[0]);
+
     }
 
     public void BoardDataNext(IPosition from, Tile to, bool promote, GameState state)
