@@ -11,7 +11,7 @@ public class GameServiceTest
     [InlineData("lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL")]
     public void SetBoardDataTest_Positive(string text)
     {
-        GameState gs = new();
+        GameState gs = new(byoyomi: 1, timeControlMin: 1, timeControlSec: 1);
         GameService service = new();
         service.SetBoardData(gs, text);
 
@@ -73,6 +73,7 @@ public class GameServiceTest
         Tile to = new(tofile, torank);
 
         GameState gs = new(
+            byoyomi: 1, timeControlMin: 1, timeControlSec: 1,
             inAGame: true,
             playerIsBlack: true,
             blackCanMovePiece:blackCanMovePiece
@@ -95,6 +96,7 @@ public class GameServiceTest
 
         GameService service = new();
         GameState gs = new(
+            byoyomi: 1, timeControlMin: 1, timeControlSec: 1,
             inAGame: true,
             playerIsBlack: true,
             blackCanMovePiece: true
@@ -126,6 +128,7 @@ public class GameServiceTest
 
         GameService service = new();
         GameState gs = new(
+            byoyomi: 1, timeControlMin: 1, timeControlSec: 1,
             inAGame: true,
             playerIsBlack: true,
             blackCanMovePiece: false
@@ -151,6 +154,7 @@ public class GameServiceTest
     {
         GameService service = new();
         GameState gs = new(
+            byoyomi: 1, timeControlMin: 1, timeControlSec: 1,
             inAGame: true,
             playerIsBlack: true,
             blackCanMovePiece: true
@@ -186,6 +190,7 @@ public class GameServiceTest
     {
         GameService service = new();
         GameState gs = new(
+            byoyomi: 1, timeControlMin: 1, timeControlSec: 1,
             inAGame: true,
             playerIsBlack: true,
             blackCanMovePiece: false
@@ -230,6 +235,7 @@ public class GameServiceTest
 
         GameService service = new();
         GameState gs = new(
+            byoyomi: 1, timeControlMin: 1, timeControlSec: 1,
             inAGame: true,
             playerIsBlack: true,
             blackCanMovePiece: true

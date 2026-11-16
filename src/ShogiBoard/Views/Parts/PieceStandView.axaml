@@ -12,6 +12,7 @@
              x:Class="ShogiBoard.Views.Parts.PieceStandView">
             <UserControl.Resources>
               <conv:PieceToBitmapConverter x:Key="PieceToBitmap"/>
+              <conv:FlipToRotateTransformConverter x:Key="FlipToRotate"/>
             </UserControl.Resources>
             <ItemsControl ItemsSource="{Binding $parent[parts:PieceStandView].Pieces}">
               <ItemsControl.ItemsPanel>
@@ -22,7 +23,10 @@
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="m:PieceOnStand">
                   <StackPanel Orientation="Horizontal">
+                    <!-- Only the piece image is rotated, so the count text stays upright. -->
                     <Image Height="32" Width="32"
+                      RenderTransformOrigin="50%,50%"
+                      RenderTransform="{Binding $parent[parts:PieceStandView].((vm:GameViewModel)DataContext).IsFlipped, Converter={StaticResource FlipToRotate}}"
                       Source="{Binding Piece, Converter={StaticResource PieceToBitmap}}"
                       Name="{Binding Piece}"
                       PointerPressed="OnPiecePointerPressed"/>

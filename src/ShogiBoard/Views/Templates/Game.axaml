@@ -9,8 +9,8 @@
              x:Class="ShogiBoard.Views.Templates.Game">
             <StackPanel Margin="60, 0, 60, 0">
               <parts:UserOperation />
-              <parts:PieceStandView Pieces="{Binding WhitePieceStand}" />
+              <parts:PieceStandView Pieces="{Binding TopPieceStand}" />
               <parts:Board />
-              <parts:PieceStandView Pieces="{Binding BlackPieceStand}" />
+              <parts:PieceStandView Pieces="{Binding BottomPieceStand}" />
             </StackPanel>
 </UserControl>
