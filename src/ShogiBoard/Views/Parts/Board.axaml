@@ -8,7 +8,15 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:DataType="vm:GameViewModel"
              x:Class="ShogiBoard.Views.Parts.Board">
-            <Panel Margin="0">
+            <UserControl.Resources>
+                <conv:FlipToRotateTransformConverter x:Key="FlipToRotate"/>
+            </UserControl.Resources>
+            <!-- Board image and pieces are rotated together. Pointer positions from
+                 e.GetPosition(BoardImage) are in the image's local (un-rotated) space,
+                 so click handling needs no changes when flipped. -->
+            <Panel Margin="0"
+                   RenderTransformOrigin="50%,50%"
+                   RenderTransform="{Binding IsFlipped, Converter={StaticResource FlipToRotate}}">
                 <Image x:Name="BoardImage" Margin="0" Height="400" Width="400"
                     Source="/Assets/one/board.png"
                     PointerPressed="OnBoardPointerPressed"/>

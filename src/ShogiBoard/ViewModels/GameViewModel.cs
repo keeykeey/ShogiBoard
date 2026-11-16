@@ -18,11 +18,16 @@ public partial class GameViewModel : ViewModelBase
     public IDialogService DialogService { get; }
     private GameState GameState { get; set; }
     public ObservableCollection<BoardRank> Board { get; set; }
-    public ObservableCollection<PieceOnStand> BlackPieceStand { get; set; }
-    public ObservableCollection<PieceOnStand> WhitePieceStand { get; set; }
     [ObservableProperty] public partial GameTime TimeSetting { get; set; }
     [ObservableProperty] public partial GameTime BlackTimeLeft { get; set; }
     [ObservableProperty] public partial GameTime WhiteTimeLeft { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TopPieceStand), nameof(BottomPieceStand))]
+    public partial bool IsFlipped { get; set; } = false;
+
+    public ObservableCollection<PieceOnStand> TopPieceStand    => IsFlipped ? GameState.BlackPieceStand.Data : GameState.WhitePieceStand.Data;
+    public ObservableCollection<PieceOnStand> BottomPieceStand => IsFlipped ? GameState.WhitePieceStand.Data : GameState.BlackPieceStand.Data;
 
     public GameViewModel(IEngineCommunicationService ecs, IGameService gs, IDialogService ds)
     {
@@ -33,8 +38,6 @@ public partial class GameViewModel : ViewModelBase
         GameService.Init9DimBoardData(GameState);
         Board b = GameState.Board;
         Board = [b.A, b.B, b.C, b.D, b.E, b.F, b.G, b.H, b.I];
-        BlackPieceStand = GameState.BlackPieceStand.Data;
-        WhitePieceStand = GameState.WhitePieceStand.Data;
         TimeSetting = GameState.TimeSetting;
         BlackTimeLeft = GameState.BlackTimeLeft;
         WhiteTimeLeft = GameState.WhiteTimeLeft;
@@ -90,6 +93,7 @@ public partial class GameViewModel : ViewModelBase
 
         bool playerIsBlack = await DialogService.ShowConfirmAsync(title: "black or white", "Choose black or white", yes: "black", no: "white", h: 120, w: 240);
 
+        IsFlipped = !playerIsBlack;
         GameService.InitGameState(gameState: GameState, inAGame: true, playerIsBlack: playerIsBlack, blackCanMovePiece: true);
         BlackTimeLeft.Set(TimeSetting.ByoyomiSec, TimeSetting.TimeControlMin, TimeSetting.TimeControlSec);
         WhiteTimeLeft.Set(TimeSetting.ByoyomiSec, TimeSetting.TimeControlMin, TimeSetting.TimeControlSec);
@@ -109,6 +113,12 @@ public partial class GameViewModel : ViewModelBase
         Cts.Cancel();
         GameState.InAGame = false;
         EngineCommunicator.GameDraw();
+    }
+
+    [RelayCommand]
+    private void FlipBoard()
+    {
+        IsFlipped = !IsFlipped;
     }
 
     [RelayCommand]
