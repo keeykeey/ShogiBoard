@@ -266,4 +266,44 @@ public class GameServiceTest
         Assert.Equal(1, silverWhiteTook?.Count);
         Assert.Null(silverBlackTook);
     }
+
+    [Theory]
+    [InlineData("2g", "2g", true)]
+    [InlineData("2g", "3g", true)]
+    [InlineData("2g", "2f", false)]
+    [InlineData("5a", "4a", true)]
+    [InlineData("5a", "5b", false)]
+    public void IsSamePlayersPiece_Positive(string _from, string _to, bool expect)
+    {
+        GameState state = new(byoyomi: 1, timeControlMin: 1, timeControlSec: 1);
+        GameService service = new();
+        service.Init9DimBoardData(state);
+        Tile from = new(_from);
+        Tile to = new(_to);
+        bool result = service.IsSamePlayersPiece(from, to, state);
+        Assert.Equal(expect, result);
+    }
+
+    private class StrangePosition : IPosition
+    {
+        public string MovePosition()
+        {
+            return "Foo";
+        }
+    }
+    [Fact]
+    public void IsSamePlayersPiece_ThrowsException()
+    {
+        GameState state = new(byoyomi: 1, timeControlMin: 1, timeControlSec: 1);
+        GameService service = new();
+        service.Init9DimBoardData(state);
+
+        StrangePosition sp = new();
+        Tile to2 = new("1a");
+        Assert.Throws<ArgumentException>(() => service.IsSamePlayersPiece(sp, to2, state));
+
+        Tile from = new("9h");
+        Tile to = new("9i");
+        Assert.Throws<Exception>(() => service.IsSamePlayersPiece(from, to, state));
+    }
 }

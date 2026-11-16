@@ -168,6 +168,11 @@ public partial class GameViewModel : ViewModelBase
         if (MoveFrom is Tile from)
         {
             if (from.Equals(pos)) return;
+            if (GameService.IsSamePlayersPiece(from, pos, GameState))
+            {
+                MoveFrom = pos;
+                return;
+            }
 
             if (GameService.CanPromote(from, pos, GameState))
             {
@@ -177,9 +182,13 @@ public partial class GameViewModel : ViewModelBase
                 );
             }
         }
-        else if (MoveFrom is PieceStandPosition)
+        else if (MoveFrom is PieceStandPosition pspfrom)
         {
-            // need to do nothing.
+            if (GameService.IsSamePlayersPiece(pspfrom, pos, GameState))
+            {
+                MoveFrom = pos;
+                return;
+            }
         }
         else
         {
