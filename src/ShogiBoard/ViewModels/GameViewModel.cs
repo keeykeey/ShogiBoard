@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,6 +18,8 @@ public partial class GameViewModel : ViewModelBase
     public IGameService GameService { get; }
     public IDialogService DialogService { get; }
     private GameState GameState { get; set; }
+    private GameRecord? GameRecordHead { get; set; }
+    private GameRecord? GameRecordCurrent { get; set; }
     public ObservableCollection<BoardRank> Board { get; set; }
     [ObservableProperty] public partial GameTime TimeSetting { get; set; }
     [ObservableProperty] public partial GameTime BlackTimeLeft { get; set; }
@@ -35,6 +38,8 @@ public partial class GameViewModel : ViewModelBase
         GameService  = gs;
         DialogService  = ds;
         GameState = new(byoyomi: 10, timeControlMin: 0, timeControlSec: 0);
+        GameRecordHead = null;
+        GameRecordCurrent = null;
         GameService.Init9DimBoardData(GameState);
         Board b = GameState.Board;
         Board = [b.A, b.B, b.C, b.D, b.E, b.F, b.G, b.H, b.I];
@@ -97,6 +102,9 @@ public partial class GameViewModel : ViewModelBase
         GameService.InitGameState(gameState: GameState, inAGame: true, playerIsBlack: playerIsBlack, blackCanMovePiece: true);
         BlackTimeLeft.Set(TimeSetting.ByoyomiSec, TimeSetting.TimeControlMin, TimeSetting.TimeControlSec);
         WhiteTimeLeft.Set(TimeSetting.ByoyomiSec, TimeSetting.TimeControlMin, TimeSetting.TimeControlSec);
+        
+        GameRecordHead = null;
+        GameRecordCurrent = null;
 
         EngineCommunicator.NewGame();
         CountGameTime(Cts.Token).Background();
@@ -231,11 +239,35 @@ public partial class GameViewModel : ViewModelBase
         MoveFrom = null;
     }
 
+    private void GameRecordSetNext(Move m)
+    {
+        // TODO : give new() score.
+        GameRecord gr = new(
+            move: m,
+            byoyomiBlack: BlackTimeLeft.ByoyomiSec,
+            timeControlMinBlack: BlackTimeLeft.TimeControlMin,
+            timeControlSecBlack: BlackTimeLeft.TimeControlSec,
+            byoyomiWhite: WhiteTimeLeft.ByoyomiSec,
+            timeControlMinWhite: WhiteTimeLeft.TimeControlMin,
+            timeControlSecWhite: WhiteTimeLeft.TimeControlSec);
+
+        if (GameRecordHead is null)
+        {
+            GameRecordHead = gr;
+            GameRecordCurrent = gr;
+        }
+        else
+        {
+            GameRecordCurrent?.SetNext(gr);
+            GameRecordCurrent = gr;
+        }
+    }
+
     private void NextGameState(IPosition from, Tile to, bool playerDoPromote)
     {
         var move = new Move(from, to, playerDoPromote);
+        GameRecordSetNext(move);
 
-        GameState.Moves.Add(move);
         GameService.BoardDataNext(move.MoveFrom, move.MoveTo, move.DoPromote, GameState);
         GameService.NextTurn(GameState);
 
@@ -251,8 +283,9 @@ public partial class GameViewModel : ViewModelBase
     {
         try
         {
+            IEnumerable<Move> moves = GameRecordHead is null ? [] : GameRecordHead.Moves();
             string bestMoveResponse = await EngineCommunicator.SendSfen(
-                GameState.Moves,
+                moves,
                 GameState.BlackCanMovePiece ? BlackTimeLeft : WhiteTimeLeft);
             string bestMove = UsiParser.ParseBestmove(bestMoveResponse);
 
@@ -265,7 +298,7 @@ public partial class GameViewModel : ViewModelBase
             else
             {
                 Move bm = new(bestMove, GameState.BlackCanMovePiece);
-                GameState.Moves.Add(bm);
+                GameRecordSetNext(bm);
                 GameService.BoardDataNext(bm.MoveFrom, bm.MoveTo, bm.DoPromote, GameState);
                 GameService.NextTurn(GameState);
                 if (GameState.InAGame)
@@ -339,7 +372,7 @@ public partial class GameViewModel : ViewModelBase
         return false;
     }
 
-    private async Task CountTimeControl(GameTime timeLeft, CancellationToken cancellationToken)
+    private static async Task CountTimeControl(GameTime timeLeft, CancellationToken cancellationToken)
     {
         int c = timeLeft.TimeControlMin * 60 + timeLeft.TimeControlSec;
         for (int i = 0; i < c; ++i)

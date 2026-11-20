@@ -27,7 +27,6 @@ public class GameService : IGameService
         gameState.InAGame = inAGame;
         gameState.PlayerIsBlack = playerIsBlack;
         gameState.BlackCanMovePiece = blackCanMovePiece;
-        gameState.Moves = [];
         Init9DimBoardData(gameState);
         InitPieceStand(gameState);
     }

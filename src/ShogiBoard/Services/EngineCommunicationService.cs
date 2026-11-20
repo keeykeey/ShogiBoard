@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics;
 using System.Collections.Generic;
 using ShogiBoard.Models;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Threading;
 
@@ -13,8 +12,8 @@ public interface IEngineCommunicationService
     void Send(string m);
     Task<string> SendAsync(string m, Func<string, bool> isResponse, TimeSpan? timeout = null);
     Task StartAsync(string executablePath, Action<string>? responseReceived);
-    Task<string> SendSfen(List<Move> moves, GameTime ts);
-    string CreateSfen(List<Move> moves);
+    Task<string> SendSfen(IEnumerable<Move> moves, GameTime ts);
+    string CreateSfen(IEnumerable<Move> moves);
     void Quit();
     void Kill();
     void NewGame();
@@ -112,7 +111,7 @@ public class EngineCommunicationService : IEngineCommunicationService
 
     }
 
-    public async Task<string> SendSfen(List<Move> moves, GameTime ts)
+    public async Task<string> SendSfen(IEnumerable<Move> moves, GameTime ts)
     {
         string sfen = CreateSfen(moves);
         Send(sfen);
@@ -124,10 +123,10 @@ public class EngineCommunicationService : IEngineCommunicationService
         return bestMove;
     }
 
-    public string CreateSfen(List<Move> _moves)
+    public string CreateSfen(IEnumerable<Move> _moves)
     {
-        IEnumerable<string> moves = _moves.Select(m => m.ToString());
-        string sfen = UsiMessage.SFEN_BASE_TEXT + string.Join(" ", moves);
+        string moves = string.Join(" ", _moves);
+        string sfen = UsiMessage.SFEN_BASE_TEXT + moves;
         return sfen;
     }
 
