@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using ShogiBoard.Models;
 
@@ -12,7 +11,7 @@ public interface IGameService
     void BoardDataNext(IPosition from, Tile to, bool promote, GameState state);
     void InitPieceStand(GameState gameState);
     void NextTurn(GameState state);
-    bool IsValidMove(IPosition from, IPosition to);
+    bool IsValidMove(IPosition from, Tile to, GameState gameState);
     bool IsSamePlayersPiece(IPosition from, Tile to, GameState gameState);
     bool CanPromote(Tile fromTileRank, Tile destTileRank, GameState state);
 }
@@ -92,10 +91,46 @@ public class GameService : IGameService
         }
     }
 
-    public bool IsValidMove(IPosition from, IPosition to)
+    public bool IsValidMove(IPosition from, Tile to, GameState gameState)
     {
-        // TODO
-        return true;
+        if (from is Tile tile)
+        {
+            string fpiece = gameState.Board.Get(rank: tile.Ranks, file: tile.Files);
+            if (fpiece.Length < 1) throw new System.Exception("fpiece has no value");
+
+            IMovement movement = PieceMovementFactory.Get(fpiece);
+            bool moveLong = movement is LanceMovement || movement is BishopMovement || movement is RookMovement || movement is HorseMovement || movement is DragonMovement;
+            bool foundPieceBefore = false;
+            foreach (Tile? dest in movement.Dest(tile))
+            {
+                if (dest is Tile t)
+                {
+                    if (t.Equals(to) && !foundPieceBefore) return true;
+                    if (gameState.Board.Get(rank: t.Ranks, file: t.Files).Length > 0 && moveLong)
+                    {
+                        foundPieceBefore = true;
+                    }
+                    continue;
+                }
+                foundPieceBefore = false;
+            }
+            return false;
+        }
+        else if (from is PieceStandPosition psp)
+        {
+            IMovement movement = PieceMovementFactory.Get(psp.PieceChar);
+            foreach (Tile? t in movement.Dest(psp))
+            {
+                if (t == null) continue;
+                if (t.Equals(to)) return true;
+            }
+            return false;
+        }
+        else
+        {
+            throw new System.ArgumentException($"Unexpected typeof from ({from.GetType()})");
+        }
+
     }
     
     public bool IsSamePlayersPiece(IPosition from, Tile to, GameState gameState)
@@ -112,18 +147,23 @@ public class GameService : IGameService
         }
         else
         {
-            throw new ArgumentException("Got unexpected type of From");
+            throw new System.ArgumentException("Got unexpected type of From");
         }
 
-        char chTo = tpiece.Length > 0 ? tpiece[0] : ' ';
-        if (fpiece.Length <= 0)
+        int fplen = fpiece.Length;
+        int tplen = tpiece.Length;
+
+        if (fplen == 0 || tplen == 0) return false;
+        if (fplen < 0 || tplen < 0 || fplen > 2 || tplen > 2)
         {
-            throw new Exception("from position should have piece string");
+            // it is believed that this exception never raises because IPosition(Tile & PieceStandPosition) rejects unexpected piece string
+            throw new System.Exception($"Unexpected Length of piece Length({fplen}, {tplen}, {fplen}, {tplen})");
         }
 
-        if (chTo == ' ') return false;
+        char fpchar = fplen == 1 ? fpiece[0] : fpiece[1];
+        char tpchar = tplen == 1 ? tpiece[0] : tpiece[1];
 
-        return char.IsLower(chTo) == char.IsLower(fpiece[0]);
+        return char.IsLower(tpchar) == char.IsLower(fpchar);
 
     }
 

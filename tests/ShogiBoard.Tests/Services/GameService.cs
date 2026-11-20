@@ -268,16 +268,45 @@ public class GameServiceTest
     }
 
     [Theory]
-    [InlineData("2g", "2g", true)]
-    [InlineData("2g", "3g", true)]
-    [InlineData("2g", "2f", false)]
-    [InlineData("5a", "4a", true)]
-    [InlineData("5a", "5b", false)]
-    public void IsSamePlayersPiece_Positive(string _from, string _to, bool expect)
+    [InlineData("9/9/9/9/4P4/9/9/9/9", "5e", "5d", true)]
+    [InlineData("9/9/9/9/4P4/9/9/9/9", "5e", "5f", false)]
+    [InlineData("9/9/9/9/4p4/9/9/9/9", "5e", "5f", true)]
+    [InlineData("9/9/9/9/4p4/9/9/9/9", "5e", "5d", false)]
+    [InlineData("9/9/9/9/9/9/9/9/L8", "9i", "9a", true)]
+    [InlineData("p8/9/9/9/9/9/9/9/L8", "9i", "9a", true)]
+    [InlineData("9/9/p8/9/9/9/9/9/L8", "9i", "9b", false)]
+    [InlineData("9/9/9/9/4b4/9/9/9/9", "5e", "9i", true)]
+    [InlineData("9/9/9/9/4B4/9/9/1P7/9", "5e", "9i", false)]
+    [InlineData("9/9/9/9/4b4/9/9/7p1/9", "5e", "1i", false)]
+    [InlineData("9/1P7/9/9/4b4/9/9/9/9", "5e", "9a", false)]
+    [InlineData("9/7P1/9/9/4b4/9/9/9/9", "5e", "1a", false)]
+    [InlineData("9/7P1/9/9/4b4/9/9/9/9", "5e", "2b", true)]
+    public void IsValidMove_FromTile_Positive(string sfen, string _from, string _to, bool expect)
     {
         GameState state = new(byoyomi: 1, timeControlMin: 1, timeControlSec: 1);
         GameService service = new();
-        service.Init9DimBoardData(state);
+        service.SetBoardData(state, sfen);
+        Tile from = new(_from);
+        Tile to = new(_to);
+        bool result = service.IsValidMove(from, to, state);
+        Assert.Equal(expect, result);
+    }
+
+    [Theory]
+    [InlineData("lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL", "2g", "2g", true)]
+    [InlineData("lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL", "2g", "3g", true)]
+    [InlineData("lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL", "2g", "2f", false)]
+    [InlineData("lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL", "5a", "4a", true)]
+    [InlineData("lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL", "5a", "5b", false)]
+    [InlineData("9/4+R4/ppppppppp/9/9/9/9/9/9", "5b", "5c", false)]
+    [InlineData("9/4+R4/PPPPPPPPP/9/9/9/9/9/9", "5b", "5c", true)]
+    [InlineData("9/9/9/9/9/9/PPPPPPPPP/4+r4/9", "5h", "5g", false)]
+    [InlineData("9/9/9/9/9/9/ppppppppp/4+r4/9", "5h", "5g", true)]
+    public void IsSamePlayersPiece_Positive(string sfen, string _from, string _to, bool expect)
+    {
+        GameState state = new(byoyomi: 1, timeControlMin: 1, timeControlSec: 1);
+        GameService service = new();
+        service.SetBoardData(state, sfen);
         Tile from = new(_from);
         Tile to = new(_to);
         bool result = service.IsSamePlayersPiece(from, to, state);
@@ -299,11 +328,7 @@ public class GameServiceTest
         service.Init9DimBoardData(state);
 
         StrangePosition sp = new();
-        Tile to2 = new("1a");
-        Assert.Throws<ArgumentException>(() => service.IsSamePlayersPiece(sp, to2, state));
-
-        Tile from = new("9h");
-        Tile to = new("9i");
-        Assert.Throws<Exception>(() => service.IsSamePlayersPiece(from, to, state));
+        Tile to1 = new("1a");
+        Assert.Throws<ArgumentException>(() => service.IsSamePlayersPiece(sp, to1, state));
     }
 }

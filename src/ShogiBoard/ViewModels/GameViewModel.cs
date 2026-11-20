@@ -148,7 +148,7 @@ public partial class GameViewModel : ViewModelBase
 
     private void ResponseReceived(string m)
     {
-        Dispatcher.UIThread.Post(() => { Response = m; });
+        Dispatcher.UIThread.Post(() => { Response = m; Console.WriteLine(m); });
     }
 
     public void KillEngine()
@@ -164,16 +164,33 @@ public partial class GameViewModel : ViewModelBase
         int rank = 1 + row;
         var pos = new Tile(file, rank);
 
+        if (MoveFrom is null)
+        {
+            if (GameState.Board.Get(file: pos.Files, rank: pos.Ranks) != string.Empty)
+            {
+                MoveFrom = pos;
+            }
+            return;
+        }
+
+        if (GameService.IsSamePlayersPiece(MoveFrom, pos, GameState))
+        {
+            Console.WriteLine("same players piece");
+            MoveFrom = pos;
+            return;
+        }
+
+        if (!GameService.IsValidMove(MoveFrom, pos, GameState))
+        {
+            Console.WriteLine("not valid move");
+            ClearMoveFrom();
+            return;
+        }
+
+
         bool playerDoPromote = false;
         if (MoveFrom is Tile from)
         {
-            if (from.Equals(pos)) return;
-            if (GameService.IsSamePlayersPiece(from, pos, GameState))
-            {
-                MoveFrom = pos;
-                return;
-            }
-
             if (GameService.CanPromote(from, pos, GameState))
             {
                 playerDoPromote = await DialogService.ShowConfirmAsync(
@@ -182,18 +199,10 @@ public partial class GameViewModel : ViewModelBase
                 );
             }
         }
-        else if (MoveFrom is PieceStandPosition pspfrom)
-        {
-            if (GameService.IsSamePlayersPiece(pspfrom, pos, GameState))
-            {
-                MoveFrom = pos;
-                return;
-            }
-        }
+        else if (MoveFrom is PieceStandPosition) { /* Nothing need to do */ }
         else
         {
-            MoveFrom = pos;
-            return;
+            throw new Exception($"Unexpected type of MoveFrom: {MoveFrom.GetType()}");
         }
 
         NextGameState(MoveFrom, pos, playerDoPromote);
@@ -224,12 +233,6 @@ public partial class GameViewModel : ViewModelBase
 
     private void NextGameState(IPosition from, Tile to, bool playerDoPromote)
     {
-        if (!GameService.IsValidMove(from, to))
-        {
-            ClearMoveFrom();
-            return;
-        }
-
         var move = new Move(from, to, playerDoPromote);
 
         GameState.Moves.Add(move);
