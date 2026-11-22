@@ -9,10 +9,11 @@ public class GameRecordTest
     {
         Move m = new("5a5b", false);
         GameRecord gr = new(
-            move: m, score: 100,
+            move: m, pieceTaked: "p", score: 100,
             byoyomiBlack: 1, timeControlMinBlack: 2, timeControlSecBlack: 3,
             byoyomiWhite: 4, timeControlMinWhite: 5, timeControlSecWhite: 6);
         Assert.Equal(m, gr.Move);
+        Assert.Equal("p", gr.PieceTaked);
         Assert.Equal(100, gr.Score);
         Assert.Equal(1, gr.ByoyomiBlack);
         Assert.Equal(2, gr.TimeControlMinBlack);
@@ -23,6 +24,7 @@ public class GameRecordTest
 
         GameRecord gr2 = new(m);
         Assert.Equal(m, gr2.Move);
+        Assert.Equal(string.Empty, gr2.PieceTaked);
         Assert.Null(gr2.Score);
         Assert.Null(gr2.ByoyomiBlack);
         Assert.Null(gr2.TimeControlMinBlack);

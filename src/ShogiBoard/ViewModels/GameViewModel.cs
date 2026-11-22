@@ -246,11 +246,12 @@ public partial class GameViewModel : ViewModelBase
         MoveFrom = null;
     }
 
-    private void GameRecordSetNext(Move m)
+    private void GameRecordSetNext(Move m, string pieceToTake)
     {
         int? score = UsiParser.ExtractScoreOfMove(ResponseStacks, m.ToString());
         GameRecord gr = new(
             move: m,
+            pieceTaked: pieceToTake,
             score: score,
             byoyomiBlack: BlackTimeLeft.ByoyomiSec,
             timeControlMinBlack: BlackTimeLeft.TimeControlMin,
@@ -275,7 +276,8 @@ public partial class GameViewModel : ViewModelBase
     private void NextGameState(IPosition from, Tile to, bool playerDoPromote)
     {
         var move = new Move(from, to, playerDoPromote);
-        GameRecordSetNext(move);
+        string pieceToTakeOrEmpty = GameState.Board.Get(rank: to.Ranks, file: to.Files);
+        GameRecordSetNext(move, pieceToTakeOrEmpty);
 
         GameService.BoardDataNext(move.MoveFrom, move.MoveTo, move.DoPromote, GameState);
         GameService.NextTurn(GameState);
@@ -309,7 +311,8 @@ public partial class GameViewModel : ViewModelBase
             else
             {
                 Move bm = new(bestMove, GameState.BlackCanMovePiece);
-                GameRecordSetNext(bm);
+                string pieceToTakeOrEmpty = GameState.Board.Get(rank: bm.MoveTo.Ranks, file: bm.MoveTo.Files);
+                GameRecordSetNext(bm, pieceToTakeOrEmpty);
                 GameService.BoardDataNext(bm.MoveFrom, bm.MoveTo, bm.DoPromote, GameState);
                 GameService.NextTurn(GameState);
                 if (GameState.InAGame)

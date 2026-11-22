@@ -4,6 +4,7 @@ namespace ShogiBoard.Models;
 
 public class GameRecord(
     Move move,
+    string pieceTaked = "",
     int? score = null,
     int? byoyomiBlack = null,
     int? timeControlMinBlack = null,
@@ -13,6 +14,7 @@ public class GameRecord(
     int? timeControlSecWhite = null)
 {
     public Move Move { get; } = move;
+    public string PieceTaked { get; } = pieceTaked;
     public int? Score { get; } = score;
     public int? ByoyomiBlack { get; } = byoyomiBlack;
     public int? TimeControlMinBlack { get; } = timeControlMinBlack;
