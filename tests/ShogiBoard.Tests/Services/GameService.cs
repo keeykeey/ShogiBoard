@@ -1,4 +1,3 @@
-
 using ShogiBoard.Services;
 using ShogiBoard.Models;
 namespace ShogiBoard.Tests.Services;
@@ -268,6 +267,65 @@ public class GameServiceTest
     }
 
     [Theory]
+    [InlineData("9/9/9/7R1/9/9/9/9/9", "R", "2h2d", "", true)]
+    [InlineData("9/9/9/9/4b4/9/9/9/9", "b", "4d5e", "", false)]
+    [InlineData("9/9/9/9/8L/9/9/9/9", "L", "1i1e", "p", true)]
+    [InlineData("9/9/9/9/8l/9/9/9/9", "l", "1a1e", "S", false)]
+    public void BoardDataPrev_RestorePieceFromTileToTileTest_PositiveBoundary(
+        string sfen, string movingPiece, string howMoved, string pieceTaked, bool restoreBlackPlayersMove)
+    {
+        GameService service = new();
+        Move m = new(howMoved, restoreBlackPlayersMove);
+
+        GameState gs = new(
+            byoyomi: 1, timeControlMin: 1, timeControlSec: 1,
+            inAGame: true,
+            playerIsBlack: true,
+            blackCanMovePiece: !restoreBlackPlayersMove
+        );
+
+        if (pieceTaked != string.Empty)
+        {
+            if (restoreBlackPlayersMove)
+            {
+                gs.BlackPieceStand.Add(piece: pieceTaked.ToUpper());
+                gs.BlackPieceStand.Add(piece: pieceTaked.ToUpper());
+            }
+            else
+            {
+                gs.WhitePieceStand.Add(piece: pieceTaked.ToLower());
+                gs.WhitePieceStand.Add(piece: pieceTaked.ToLower());
+            }
+        }
+
+        service.SetBoardData(gs, sfen);
+        // note: When executing BoardDataPrev(), piece moves from Move.MoveTo to Move.MoveFrom.
+        service.BoardDataPrev(m.MoveTo, m.MoveFrom, m.DoPromote, string.Empty, gs);
+        Assert.Equal("", gs.Board.Get(file: m.MoveTo.Files, rank: m.MoveTo.Ranks));
+
+        // note: When executing BoardDataPrev(), piece moves from Move.MoveTo to Move.MoveFrom.
+        if (m.MoveFrom is Tile from)
+        {
+            Assert.Equal(movingPiece, gs.Board.Get(file: from.Files, rank: from.Ranks));
+        }
+        else if (m.MoveFrom is PieceStandPosition psp)
+        {
+            if (restoreBlackPlayersMove)
+            {
+                PieceOnStand got = gs.BlackPieceStand.Data.First(p => p.Piece.Equals(movingPiece));
+                Assert.Equal(movingPiece, got.Piece);
+                Assert.Equal(1, got.Count);
+            }
+            else
+            {
+                PieceOnStand got = gs.WhitePieceStand.Data.First(p => p.Piece.Equals(movingPiece));
+                Assert.Equal(movingPiece, got.Piece);
+                Assert.Equal(1, got.Count);
+            }
+        }
+    }
+
+    [Theory]
     [InlineData("9/9/9/9/4P4/9/9/9/9", "5e", "5d", true)]
     [InlineData("9/9/9/9/4P4/9/9/9/9", "5e", "5f", false)]
     [InlineData("9/9/9/9/4p4/9/9/9/9", "5e", "5f", true)]
@@ -320,6 +378,7 @@ public class GameServiceTest
             return "Foo";
         }
     }
+
     [Fact]
     public void IsSamePlayersPiece_ThrowsException()
     {
