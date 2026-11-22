@@ -60,6 +60,10 @@ public partial class GameViewModel : ViewModelBase
     [ObservableProperty]
     public partial string Message { get; set; } = string.Empty;
 
+    [ObservableProperty]
+    public partial int Score { get; set; } = 0;
+    private readonly Stack<string> ResponseStacks = [];
+
     [RelayCommand]
     private async Task StartEngine()
     {
@@ -156,7 +160,10 @@ public partial class GameViewModel : ViewModelBase
 
     private void ResponseReceived(string m)
     {
-        Dispatcher.UIThread.Post(() => { Response = m; Console.WriteLine(m); });
+        Dispatcher.UIThread.Post(() => {
+            Response = m;
+            ResponseStacks.Push(m);
+        });
     }
 
     public void KillEngine()
@@ -241,15 +248,17 @@ public partial class GameViewModel : ViewModelBase
 
     private void GameRecordSetNext(Move m)
     {
-        // TODO : give new() score.
+        int? score = UsiParser.ExtractScoreOfMove(ResponseStacks, m.ToString());
         GameRecord gr = new(
             move: m,
+            score: score,
             byoyomiBlack: BlackTimeLeft.ByoyomiSec,
             timeControlMinBlack: BlackTimeLeft.TimeControlMin,
             timeControlSecBlack: BlackTimeLeft.TimeControlSec,
             byoyomiWhite: WhiteTimeLeft.ByoyomiSec,
             timeControlMinWhite: WhiteTimeLeft.TimeControlMin,
             timeControlSecWhite: WhiteTimeLeft.TimeControlSec);
+        ResponseStacks.Clear();
 
         if (GameRecordHead is null)
         {
@@ -286,7 +295,9 @@ public partial class GameViewModel : ViewModelBase
             IEnumerable<Move> moves = GameRecordHead is null ? [] : GameRecordHead.Moves();
             string bestMoveResponse = await EngineCommunicator.SendSfen(
                 moves,
-                GameState.BlackCanMovePiece ? BlackTimeLeft : WhiteTimeLeft);
+                BlackTimeLeft,
+                WhiteTimeLeft,
+                GameState.PlayerIsBlack ? WhiteTimeLeft.ByoyomiMiliSec : BlackTimeLeft.ByoyomiMiliSec);
             string bestMove = UsiParser.ParseBestmove(bestMoveResponse);
 
             if (bestMove == UsiMessage.RESIGN)

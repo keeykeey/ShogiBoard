@@ -48,7 +48,8 @@ public class GameRecord(
     public IEnumerable<Move> Moves()
     {
         GameRecord? runner = this;
-        while(runner is not null)
+        int safeGuard = 500;
+        while(runner is not null && --safeGuard >= 0)
         {
             yield return runner.Move;
             runner = runner.Next;

@@ -1,6 +1,33 @@
 using ShogiBoard.Models;
+using System.Collections.Generic;
 
 namespace ShogiBoard.Tests.Models;
+
+public class UsiParserTest
+{
+    [Theory]
+    [InlineData("info time 0 depth 1 nodes 4 score cp 16 pv 5a4b", "5a4b", 16)]
+    [InlineData("info time 4 depth 3 nodes 1353 score cp -2454 pv 5a5b P*2c 3b2c", "5a5b", -2454)]
+    [InlineData("info time 27 depth 4 nodes 9593 score cp -1286 pv 5a4b P*2d 1d1e 2d2c+", "5a4b", -1286)]
+    public void ParseMoveAndScore_Positive(string text, string moveExpect, int? scoreExpect)
+    {
+        (string, int?) result = UsiParser.ParseMoveAndScore(text);
+        Assert.Equal(moveExpect, result.Item1);
+        Assert.Equal(scoreExpect, result.Item2);
+    }
+
+    [Fact]
+    public void ExtractScoreOfMove_Positive()
+    {
+        Stack<string> stack = new();
+        stack.Push("info time 0 depth 1 nodes 4 score cp 16 pv 5a4b");
+        stack.Push("info time 4 depth 3 nodes 1353 score cp -2454 pv 5a4b P*2c 3b2c");
+        stack.Push("info time 27 depth 4 nodes 9593 score cp -1286 pv 5a4b P*2d 1d1e 2d2c+");
+
+        int? score = UsiParser.ExtractScoreOfMove(stack, "5a4b");
+        Assert.Equal(-1286, score);
+    }
+}
 
 public class SfenParserTest
 {
