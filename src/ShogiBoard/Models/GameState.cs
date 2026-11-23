@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -17,7 +16,6 @@ public class GameState(
     public Board Board = new();
     public PieceStand BlackPieceStand = new();
     public PieceStand WhitePieceStand = new();
-    public List<Move> Moves { get; set; } = [];
     public bool InAGame { get; set; } = inAGame;
     public bool PlayerIsBlack { get; set; } = playerIsBlack;
     public bool BlackCanMovePiece { get; set; } = blackCanMovePiece;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace ShogiBoard.Models;
@@ -44,6 +45,45 @@ public partial class UsiParser
         }
 
         return "";
+    }
+
+    // "info time 27 depth 4 nodes 9593 score cp -1286 pv 5a4b P*2d 1d1e 2d2c+"
+    [GeneratedRegex(@"^info[\s][\sa-zA-Z0-9]*score[\s]+cp[\s]+(?<score>[-]?[0-9]+)[\s]+.*pv[\s]+(?<move>[a-zA-Z1-9*+]+)")]
+    private static partial Regex MoveAndScoreRegex();
+
+    public static (string move, int? score) ParseMoveAndScore(string usiInfo)
+    {
+        Match match = MoveAndScoreRegex().Match(usiInfo);
+        if (match.Success)
+        {
+            string move = match.Groups["move"].Value;
+            string _score = match.Groups["score"].Value;
+            int? score = int.TryParse(_score, out var s) ? s : null;
+
+            return (move, score);
+        }
+
+        return (string.Empty, null);
+    }
+
+    public static int? ExtractScoreOfMove(Stack<string> usiInfos, string move)
+    {
+        Dictionary<string, int> pairs = [];
+        foreach(var info in usiInfos)
+        {
+            (string bm, int? s) = ParseMoveAndScore(info);
+            if (s is int _s)
+            {
+                pairs.TryAdd(bm, _s);
+            }
+        }
+
+        if (pairs.TryGetValue(move, out int score))
+        {
+            return score;
+        }
+
+        return null;
     }
 }
 

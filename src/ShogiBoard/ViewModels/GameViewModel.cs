@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,6 +18,9 @@ public partial class GameViewModel : ViewModelBase
     public IGameService GameService { get; }
     public IDialogService DialogService { get; }
     private GameState GameState { get; set; }
+    private readonly GameRecordHead GameRecordHead = new();
+    private readonly GameRecordTail GameRecordTail = new();
+    private IGameRecord GameRecordCurrent { get; set; }
     public ObservableCollection<BoardRank> Board { get; set; }
     [ObservableProperty] public partial GameTime TimeSetting { get; set; }
     [ObservableProperty] public partial GameTime BlackTimeLeft { get; set; }
@@ -35,6 +39,8 @@ public partial class GameViewModel : ViewModelBase
         GameService  = gs;
         DialogService  = ds;
         GameState = new(byoyomi: 10, timeControlMin: 0, timeControlSec: 0);
+        GameRecordHead.LinkNext(GameRecordTail);
+        GameRecordCurrent = GameRecordHead;
         GameService.Init9DimBoardData(GameState);
         Board b = GameState.Board;
         Board = [b.A, b.B, b.C, b.D, b.E, b.F, b.G, b.H, b.I];
@@ -54,6 +60,10 @@ public partial class GameViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial string Message { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial int Score { get; set; } = 0;
+    private readonly Stack<string> ResponseStacks = [];
 
     [RelayCommand]
     private async Task StartEngine()
@@ -97,6 +107,9 @@ public partial class GameViewModel : ViewModelBase
         GameService.InitGameState(gameState: GameState, inAGame: true, playerIsBlack: playerIsBlack, blackCanMovePiece: true);
         BlackTimeLeft.Set(TimeSetting.ByoyomiSec, TimeSetting.TimeControlMin, TimeSetting.TimeControlSec);
         WhiteTimeLeft.Set(TimeSetting.ByoyomiSec, TimeSetting.TimeControlMin, TimeSetting.TimeControlSec);
+        
+        GameRecordHead.LinkNext(GameRecordTail);
+        GameRecordCurrent = GameRecordHead;
 
         EngineCommunicator.NewGame();
         CountGameTime(Cts.Token).Background();
@@ -144,11 +157,96 @@ public partial class GameViewModel : ViewModelBase
             return;
         }
         GameService.InitGameState(gameState: GameState, inAGame: false, playerIsBlack: true, blackCanMovePiece: true);
+        GameRecordHead.LinkNext(GameRecordTail);
+        GameRecordCurrent = GameRecordHead;
+    }
+
+    [RelayCommand]
+    private void OnPlayBackPrev()
+    {
+        if (GameRecordCurrent is GameRecordHead)
+        {
+            return;
+        }
+        else if (GameRecordCurrent is GameRecord gr)
+        {
+            GameService.BoardDataPrev(
+                from: gr.Move.MoveTo,  // intentionally set Move.MoveTo to from argument because this process roll backs the state.
+                to: gr.Move.MoveFrom,  // intentionally set Move.MoveFrom to to argument because this process roll backs the state.
+                promoted: gr.Move.DoPromote,
+                pieceTaked: gr.PieceTaked,
+                state: GameState
+            );
+
+            IGameRecord? prev = gr.GetPrev();
+            if (prev is not null)
+            {
+                GameRecordCurrent = prev;
+            }
+        }
+        else if (GameRecordCurrent is GameRecordTail grt)
+        {
+            IGameRecord? prev = grt.GetPrev();
+            if (prev is not null)
+            {
+                GameRecordCurrent = prev;
+            }
+            OnPlayBackPrev();
+        }
+    }
+
+    [RelayCommand]
+    private void OnPlayBackNext()
+    {
+        if (GameRecordCurrent.GetNext() is GameRecordHead _)
+        {
+            throw new Exception("Unexpected behavior that GameRecordCurrent.GetNext() returns GameRecordHead");
+        }
+        else if (GameRecordCurrent.GetNext() is GameRecord gr)
+        {
+            GameService.BoardDataNext(
+                from: gr.Move.MoveFrom,  // intentionally set Move.MoveTo to from argument because this process roll backs the state.
+                to: gr.Move.MoveTo,  // intentionally set Move.MoveFrom to to argument because this process roll backs the state.
+                promote: gr.Move.DoPromote,
+                state: GameState
+            );
+
+            GameRecordCurrent = gr;
+        }
+        else if (GameRecordCurrent.GetNext() is GameRecordTail _)
+        {
+            return;
+        }
+    }
+
+    [RelayCommand]
+    private void OnPlayBackStart()
+    {
+        int safeGuard = 500;
+        while (GameRecordCurrent.GetPrev() is not null)
+        {
+            OnPlayBackPrev();
+            if (--safeGuard <= 0) break;
+        }
+    }
+
+    [RelayCommand]
+    private void OnPlayBackLast()
+    {
+        int safeGuard = 500;
+        while (GameRecordCurrent.GetNext() is not null)
+        {
+            OnPlayBackNext();
+            if (--safeGuard <= 0) break;
+        }
     }
 
     private void ResponseReceived(string m)
     {
-        Dispatcher.UIThread.Post(() => { Response = m; Console.WriteLine(m); });
+        Dispatcher.UIThread.Post(() => {
+            Response = m;
+            ResponseStacks.Push(m);
+        });
     }
 
     public void KillEngine()
@@ -231,11 +329,32 @@ public partial class GameViewModel : ViewModelBase
         MoveFrom = null;
     }
 
+    private void GameRecordSetNext(Move m, string pieceToTake)
+    {
+        int? score = UsiParser.ExtractScoreOfMove(ResponseStacks, m.ToString());
+        GameRecord gr = new(
+            move: m,
+            pieceTaked: pieceToTake,
+            score: score,
+            byoyomiBlack: BlackTimeLeft.ByoyomiSec,
+            timeControlMinBlack: BlackTimeLeft.TimeControlMin,
+            timeControlSecBlack: BlackTimeLeft.TimeControlSec,
+            byoyomiWhite: WhiteTimeLeft.ByoyomiSec,
+            timeControlMinWhite: WhiteTimeLeft.TimeControlMin,
+            timeControlSecWhite: WhiteTimeLeft.TimeControlSec);
+        ResponseStacks.Clear();
+
+        gr.LinkNext(GameRecordTail);
+        GameRecordCurrent.LinkNext(gr);
+        GameRecordCurrent = gr;
+    }
+
     private void NextGameState(IPosition from, Tile to, bool playerDoPromote)
     {
         var move = new Move(from, to, playerDoPromote);
+        string pieceToTakeOrEmpty = GameState.Board.Get(rank: to.Ranks, file: to.Files);
+        GameRecordSetNext(move, pieceToTakeOrEmpty);
 
-        GameState.Moves.Add(move);
         GameService.BoardDataNext(move.MoveFrom, move.MoveTo, move.DoPromote, GameState);
         GameService.NextTurn(GameState);
 
@@ -251,9 +370,12 @@ public partial class GameViewModel : ViewModelBase
     {
         try
         {
+            IEnumerable<Move> moves = GameRecordHead is null ? [] : GameRecordHead.Moves();
             string bestMoveResponse = await EngineCommunicator.SendSfen(
-                GameState.Moves,
-                GameState.BlackCanMovePiece ? BlackTimeLeft : WhiteTimeLeft);
+                moves,
+                BlackTimeLeft,
+                WhiteTimeLeft,
+                GameState.PlayerIsBlack ? WhiteTimeLeft.ByoyomiMiliSec : BlackTimeLeft.ByoyomiMiliSec);
             string bestMove = UsiParser.ParseBestmove(bestMoveResponse);
 
             if (bestMove == UsiMessage.RESIGN)
@@ -265,7 +387,8 @@ public partial class GameViewModel : ViewModelBase
             else
             {
                 Move bm = new(bestMove, GameState.BlackCanMovePiece);
-                GameState.Moves.Add(bm);
+                string pieceToTakeOrEmpty = GameState.Board.Get(rank: bm.MoveTo.Ranks, file: bm.MoveTo.Files);
+                GameRecordSetNext(bm, pieceToTakeOrEmpty);
                 GameService.BoardDataNext(bm.MoveFrom, bm.MoveTo, bm.DoPromote, GameState);
                 GameService.NextTurn(GameState);
                 if (GameState.InAGame)
@@ -339,7 +462,7 @@ public partial class GameViewModel : ViewModelBase
         return false;
     }
 
-    private async Task CountTimeControl(GameTime timeLeft, CancellationToken cancellationToken)
+    private static async Task CountTimeControl(GameTime timeLeft, CancellationToken cancellationToken)
     {
         int c = timeLeft.TimeControlMin * 60 + timeLeft.TimeControlSec;
         for (int i = 0; i < c; ++i)

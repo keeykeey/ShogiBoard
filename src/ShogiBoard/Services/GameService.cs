@@ -9,6 +9,7 @@ public interface IGameService
     void Init9DimBoardData(GameState gameState);
     void SetBoardData(GameState gameState, string sfenBoardText);
     void BoardDataNext(IPosition from, Tile to, bool promote, GameState state);
+    void BoardDataPrev(Tile from, IPosition to, bool promoted, string pieceTaked, GameState state);
     void InitPieceStand(GameState gameState);
     void NextTurn(GameState state);
     bool IsValidMove(IPosition from, Tile to, GameState gameState);
@@ -27,7 +28,6 @@ public class GameService : IGameService
         gameState.InAGame = inAGame;
         gameState.PlayerIsBlack = playerIsBlack;
         gameState.BlackCanMovePiece = blackCanMovePiece;
-        gameState.Moves = [];
         Init9DimBoardData(gameState);
         InitPieceStand(gameState);
     }
@@ -200,6 +200,42 @@ public class GameService : IGameService
             else if (WhiteOwns(ps.PieceChar))
             {
                 state.WhitePieceStand.Remove(ps.PieceChar);
+            }
+        }
+        else
+        {
+            throw new System.Exception("Unexpected Operation");
+        }
+    }
+
+    public void BoardDataPrev(Tile from, IPosition to, bool promoted, string pieceTaked, GameState state)
+    {
+        if (to is Tile tile)
+        {
+            string movingPiece = promoted
+                ? $"{state.Board.Get(rank: from.Ranks, file: from.Files)}".Replace("+", "")
+                : $"{state.Board.Get(rank: from.Ranks, file: from.Files)}";
+            state.Board.Set(rank: from.Ranks, file: from.Files, piece: pieceTaked);
+            state.Board.Set(rank: tile.Ranks, file: tile.Files, movingPiece);
+            if (WhiteOwns(pieceTaked))
+            {
+                state.BlackPieceStand.Remove(pieceTaked.Replace("+", "").ToUpper());
+            }
+            else if (BlackOwns(pieceTaked))
+            {
+                state.WhitePieceStand.Remove(pieceTaked.Replace("+", "").ToLower());
+            }
+        }
+        else if (to is PieceStandPosition ps)
+        {
+            state.Board.Set(rank: from.Ranks, file: from.Files, string.Empty);
+            if (BlackOwns(ps.PieceChar))
+            {
+                state.BlackPieceStand.Add(ps.PieceChar);
+            }
+            else if (WhiteOwns(ps.PieceChar))
+            {
+                state.WhitePieceStand.Add(ps.PieceChar);
             }
         }
         else
