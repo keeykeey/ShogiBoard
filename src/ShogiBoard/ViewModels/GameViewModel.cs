@@ -18,8 +18,9 @@ public partial class GameViewModel : ViewModelBase
     public IGameService GameService { get; }
     public IDialogService DialogService { get; }
     private GameState GameState { get; set; }
-    private GameRecord? GameRecordHead { get; set; }
-    private GameRecord? GameRecordCurrent { get; set; }
+    private readonly GameRecordHead GameRecordHead = new();
+    private readonly GameRecordTail GameRecordTail = new();
+    private IGameRecord GameRecordCurrent { get; set; }
     public ObservableCollection<BoardRank> Board { get; set; }
     [ObservableProperty] public partial GameTime TimeSetting { get; set; }
     [ObservableProperty] public partial GameTime BlackTimeLeft { get; set; }
@@ -38,8 +39,8 @@ public partial class GameViewModel : ViewModelBase
         GameService  = gs;
         DialogService  = ds;
         GameState = new(byoyomi: 10, timeControlMin: 0, timeControlSec: 0);
-        GameRecordHead = null;
-        GameRecordCurrent = null;
+        GameRecordHead.LinkNext(GameRecordTail);
+        GameRecordCurrent = GameRecordHead;
         GameService.Init9DimBoardData(GameState);
         Board b = GameState.Board;
         Board = [b.A, b.B, b.C, b.D, b.E, b.F, b.G, b.H, b.I];
@@ -107,8 +108,8 @@ public partial class GameViewModel : ViewModelBase
         BlackTimeLeft.Set(TimeSetting.ByoyomiSec, TimeSetting.TimeControlMin, TimeSetting.TimeControlSec);
         WhiteTimeLeft.Set(TimeSetting.ByoyomiSec, TimeSetting.TimeControlMin, TimeSetting.TimeControlSec);
         
-        GameRecordHead = null;
-        GameRecordCurrent = null;
+        GameRecordHead.LinkNext(GameRecordTail);
+        GameRecordCurrent = GameRecordHead;
 
         EngineCommunicator.NewGame();
         CountGameTime(Cts.Token).Background();
@@ -156,6 +157,88 @@ public partial class GameViewModel : ViewModelBase
             return;
         }
         GameService.InitGameState(gameState: GameState, inAGame: false, playerIsBlack: true, blackCanMovePiece: true);
+        GameRecordHead.LinkNext(GameRecordTail);
+        GameRecordCurrent = GameRecordHead;
+    }
+
+    [RelayCommand]
+    private void OnPlayBackPrev()
+    {
+        if (GameRecordCurrent is GameRecordHead)
+        {
+            return;
+        }
+        else if (GameRecordCurrent is GameRecord gr)
+        {
+            GameService.BoardDataPrev(
+                from: gr.Move.MoveTo,  // intentionally set Move.MoveTo to from argument because this process roll backs the state.
+                to: gr.Move.MoveFrom,  // intentionally set Move.MoveFrom to to argument because this process roll backs the state.
+                promoted: gr.Move.DoPromote,
+                pieceTaked: gr.PieceTaked,
+                state: GameState
+            );
+
+            IGameRecord? prev = gr.GetPrev();
+            if (prev is not null)
+            {
+                GameRecordCurrent = prev;
+            }
+        }
+        else if (GameRecordCurrent is GameRecordTail grt)
+        {
+            IGameRecord? prev = grt.GetPrev();
+            if (prev is not null)
+            {
+                GameRecordCurrent = prev;
+            }
+            OnPlayBackPrev();
+        }
+    }
+
+    [RelayCommand]
+    private void OnPlayBackNext()
+    {
+        if (GameRecordCurrent.GetNext() is GameRecordHead _)
+        {
+            throw new Exception("Unexpected behavior that GameRecordCurrent.GetNext() returns GameRecordHead");
+        }
+        else if (GameRecordCurrent.GetNext() is GameRecord gr)
+        {
+            GameService.BoardDataNext(
+                from: gr.Move.MoveFrom,  // intentionally set Move.MoveTo to from argument because this process roll backs the state.
+                to: gr.Move.MoveTo,  // intentionally set Move.MoveFrom to to argument because this process roll backs the state.
+                promote: gr.Move.DoPromote,
+                state: GameState
+            );
+
+            GameRecordCurrent = gr;
+        }
+        else if (GameRecordCurrent.GetNext() is GameRecordTail _)
+        {
+            return;
+        }
+    }
+
+    [RelayCommand]
+    private void OnPlayBackStart()
+    {
+        int safeGuard = 500;
+        while (GameRecordCurrent.GetPrev() is not null)
+        {
+            OnPlayBackPrev();
+            if (--safeGuard <= 0) break;
+        }
+    }
+
+    [RelayCommand]
+    private void OnPlayBackLast()
+    {
+        int safeGuard = 500;
+        while (GameRecordCurrent.GetNext() is not null)
+        {
+            OnPlayBackNext();
+            if (--safeGuard <= 0) break;
+        }
     }
 
     private void ResponseReceived(string m)
@@ -261,16 +344,9 @@ public partial class GameViewModel : ViewModelBase
             timeControlSecWhite: WhiteTimeLeft.TimeControlSec);
         ResponseStacks.Clear();
 
-        if (GameRecordHead is null)
-        {
-            GameRecordHead = gr;
-            GameRecordCurrent = gr;
-        }
-        else
-        {
-            GameRecordCurrent?.SetNext(gr);
-            GameRecordCurrent = gr;
-        }
+        gr.LinkNext(GameRecordTail);
+        GameRecordCurrent.LinkNext(gr);
+        GameRecordCurrent = gr;
     }
 
     private void NextGameState(IPosition from, Tile to, bool playerDoPromote)

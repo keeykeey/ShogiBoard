@@ -44,7 +44,7 @@ public class GameRecordTest
         GameRecord gr2 = new(m2);
         GameRecord gr3 = new(m3);
 
-        gr.SetNext(gr2);
+        gr.LinkNext(gr2);
         gr.SetBranchNext(gr3);
 
         Assert.Equal(gr2, gr.GetNext());
@@ -72,15 +72,17 @@ public class GameRecordTest
         Move m2 = new("5a5b", false);
         Move m3 = new("P*5e", true);
         Move m4 = new("2d2c+", false);
+        GameRecordHead head = new();
         GameRecord gr = new(m);
         GameRecord gr2 = new(m2);
         GameRecord gr3 = new(m3);
         GameRecord gr4 = new(m4);
-        gr.SetNext(gr2);
-        gr2.SetNext(gr3);
-        gr3.SetNext(gr4);
+        head.LinkNext(gr);
+        gr.LinkNext(gr2);
+        gr2.LinkNext(gr3);
+        gr3.LinkNext(gr4);
 
-        Assert.Equal("5i5h 5a5b P*5e 2d2c+", string.Join(" ", gr.Moves()));
+        Assert.Equal("5i5h 5a5b P*5e 2d2c+", string.Join(" ", head.Moves()));
     }
 
     [Fact]

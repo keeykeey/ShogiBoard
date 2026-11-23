@@ -1,0 +1,20 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ShogiBoard.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             Width="480"
+             x:DataType="vm:GameViewModel"
+             x:Class="ShogiBoard.Views.Parts.Playback">
+            <Grid
+              ColumnDefinitions="*,*,*,*"
+              RowDefinitions="*"
+              HorizontalAlignment="Center"
+              RowSpacing="0" ColumnSpacing="4">
+              <Button Grid.Row="0" Grid.Column="0" Command="{Binding PlayBackStartCommand}">start</Button>
+              <Button Grid.Row="0" Grid.Column="1" Command="{Binding PlayBackPrevCommand}">prev</Button>
+              <Button Grid.Row="0" Grid.Column="2" Command="{Binding PlayBackNextCommand}">next</Button>
+              <Button Grid.Row="0" Grid.Column="3" Command="{Binding PlayBackLastCommand}">last</Button>
+            </Grid>
+</UserControl>

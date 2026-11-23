@@ -2,6 +2,61 @@ using System.Collections.Generic;
 
 namespace ShogiBoard.Models;
 
+public interface IGameRecord
+{
+    IGameRecord? GetPrev();
+    IGameRecord? GetNext();
+    void SetPrev(IGameRecord prev);
+    void LinkNext(IGameRecord next);
+}
+
+public class GameRecordHead : IGameRecord
+{
+    private IGameRecord? Next { get; set; } = null;
+    private IGameRecord? Prev { get; set; } = null;
+
+    public IGameRecord? GetPrev() => Prev;
+    public IGameRecord? GetNext() => Next;
+
+    public void SetPrev(IGameRecord prev) { /** void */}
+
+    public void LinkNext(IGameRecord next)
+    {
+        next.SetPrev(this);
+        Next = next;
+    }
+
+    public IEnumerable<Move> Moves()
+    {
+        IGameRecord? runner = this;
+        int safeGuard = 500;
+        while(runner is not null && --safeGuard >= 0)
+        {
+            if (runner is GameRecord gm)
+            {
+                yield return gm.Move;
+            }
+            runner = runner.GetNext();
+        }
+    }
+}
+
+public class GameRecordTail : IGameRecord
+{
+    private IGameRecord? Next { get; set; } = null;
+    private IGameRecord? Prev { get; set; } = null;
+
+    public IGameRecord? GetPrev() => Prev;
+    public IGameRecord? GetNext() => Next;
+
+    public void SetPrev(IGameRecord prev)
+    {
+        Prev = prev;
+    }
+
+    public void LinkNext(IGameRecord next) { /** void */}
+}
+
 public class GameRecord(
     Move move,
     string pieceTaked = "",
@@ -11,8 +66,8 @@ public class GameRecord(
     int? timeControlSecBlack = null,
     int? byoyomiWhite = null,
     int? timeControlMinWhite = null,
-    int? timeControlSecWhite = null)
-{
+    int? timeControlSecWhite = null
+) : IGameRecord {
     public Move Move { get; } = move;
     public string PieceTaked { get; } = pieceTaked;
     public int? Score { get; } = score;
@@ -22,18 +77,22 @@ public class GameRecord(
     public int? ByoyomiWhite { get; } = byoyomiWhite;
     public int? TimeControlMinWhite { get; } = timeControlMinWhite;
     public int? TimeControlSecWhite { get; } = timeControlSecWhite;
-    private GameRecord? Next { get; set; } = null;
-    private GameRecord? Prev { get; set; } = null;
+    private IGameRecord? Next { get; set; } = null;
+    private IGameRecord? Prev { get; set; } = null;
     private List<GameRecord> BranchNext { get; set; } = [];
 
-    public GameRecord? GetNext() => Next;
-    public void SetNext(GameRecord next)
+    public IGameRecord? GetNext() => Next;
+    public void LinkNext(IGameRecord next)
     {
-        next.Prev = this;
+        next.SetPrev(this);
         Next = next;
     }
 
-    public GameRecord? GetPrev() => Prev;
+    public IGameRecord? GetPrev() => Prev;
+    public void SetPrev(IGameRecord prev)
+    {
+        Prev = prev;
+    }
 
     public GameRecord? GetBranchNext(int branchIndex)
     {
@@ -41,20 +100,10 @@ public class GameRecord(
 
         return BranchNext[branchIndex];
     }
+
     public void SetBranchNext(GameRecord next)
     {
         next.Prev = this;
         BranchNext.Add(next);
-    }
-
-    public IEnumerable<Move> Moves()
-    {
-        GameRecord? runner = this;
-        int safeGuard = 500;
-        while(runner is not null && --safeGuard >= 0)
-        {
-            yield return runner.Move;
-            runner = runner.Next;
-        }
     }
 }
