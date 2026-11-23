@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
+using ShogiBoard.Models;
 using ShogiBoard.Services;
 using ShogiBoard.ViewModels;
 using ShogiBoard.Views;
@@ -18,10 +19,12 @@ public partial class App : Application
     public override void OnFrameworkInitializationCompleted()
     {
         var service = new ServiceCollection();
+        service.AddSingleton<GameRecordStore>();
         service.AddTransient<IEngineCommunicationService, EngineCommunicationService>();
         service.AddTransient<IGameService, GameService>();
         service.AddTransient<IDialogService, DialogService>();
         service.AddTransient<GameViewModel>();
+        service.AddTransient<EvaluationViewModel>();
         service.AddTransient<MainViewModel>();
 
         var provider = service.BuildServiceProvider();

@@ -2,13 +2,18 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:ShogiBoard.ViewModels"
         xmlns:templates="using:ShogiBoard.Views.Templates"
+        xmlns:parts="using:ShogiBoard.Views.Parts"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        Width="480" Height="640"
+        Width="480" Height="840"
+        CanResize="False"
         x:Class="ShogiBoard.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         WindowStartupLocation="CenterScreen"
         Title="ShogiBoard">
-    <templates:Game DataContext="{Binding GameViewModel}"/>
+        <StackPanel>
+            <templates:Game DataContext="{Binding GameViewModel}"/>
+            <parts:Evaluation DataContext="{Binding EvaluationViewModel}"/>
+        </StackPanel>
 </Window>

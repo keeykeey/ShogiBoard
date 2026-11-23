@@ -1,0 +1,161 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ShogiBoard.ViewModels"
+             xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+             xmlns:sys="clr-namespace:System;assembly=netstandard"
+             xmlns:scg="clr-namespace:System.Collections.Generic;assembly=netstandard"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             Width="480" Height="160"
+             x:DataType="vm:EvaluationViewModel"
+             x:Class="ShogiBoard.Views.Parts.Evaluation">
+            <UserControl.Resources>
+              <x:String x:Key="gray">#c3c3c3</x:String>
+              <x:String x:Key="gray1">#a0a0a0</x:String>
+              <x:String x:Key="gray2">#5a5a5a</x:String>
+              <x:String x:Key="gray3">#3c3c3c</x:String>
+            </UserControl.Resources>
+
+            <lvc:CartesianChart
+                Background="#333333"
+                Margin="8"
+                DrawMarginFrame="{lvc:Frame Stroke={lvc:SolidColorPaint Color={StaticResource gray}, StrokeWidth=2}}"
+                ZoomMode="Both"
+                TooltipPosition="Hidden"
+                >
+                <lvc:CartesianChart.XAxes>
+                    <lvc:XamlAxis
+                        NamePaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray1}}"
+                        TextSize="12"
+                        SeparatorsPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray},
+                            StrokeWidth=1,
+                            PathEffect={lvc:Dashed Array='3,3'}}"
+                        SubseparatorsPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray2},
+                            StrokeWidth=0.5}"
+                        SubseparatorsCount="9"
+                        ZeroPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray1},
+                            StrokeWidth=2}"
+                        TicksPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray},
+                            StrokeWidth=1.5}"
+                        SubticksPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray},
+                            StrokeWidth=1}"
+                        MinLimit="0"
+                        MinStep="1"
+                        ForceStepToMin="True"
+                        Labeler="{Binding MoveLabeler}"/>
+                </lvc:CartesianChart.XAxes>
+                <lvc:CartesianChart.YAxes>
+                    <lvc:XamlAxis
+                        TextSize="8"
+                        SeparatorsPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray},
+                            StrokeWidth=1,
+                            PathEffect={lvc:Dashed Array='3,3'}}"
+                        SubseparatorsPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray2},
+                            StrokeWidth=0.5}"
+                        SubseparatorsCount="9"
+                        ZeroPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray1},
+                            StrokeWidth=2}"
+                        TicksPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray},
+                            StrokeWidth=1.5}"
+                        SubticksPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray},
+                            StrokeWidth=1}"/>
+                </lvc:CartesianChart.YAxes>
+                <lvc:CartesianChart.Title>
+                    <lvc:XamlDrawnLabelVisual
+                      Text="Evaluation"
+                      Paint="{lvc:SolidColorPaint Color='#FFFFFF'}"
+                      TextSize="16"
+                      Padding="{lvc:Padding '4'}"/>
+                </lvc:CartesianChart.Title>
+                <lvc:CartesianChart.Series>
+                    <lvc:XamlLineSeries
+                      Fill="{x:Null}"
+                      Stroke="{lvc:SolidColorPaint Color='#2196F3', StrokeWidth=4}"
+                      GeometrySize="4"
+                      Values="{Binding Scores}"/>
+                </lvc:CartesianChart.Series>
+            </lvc:CartesianChart>
+
+            <!-- <UserControl.Resources>
+                <x:String x:Key="gray">#c3c3c3</x:String>
+                <x:String x:Key="gray1">#a0a0a0</x:String>
+                <x:String x:Key="gray2">#5a5a5a</x:String>
+                <x:String x:Key="gray3">#3c3c3c</x:String>
+            </UserControl.Resources>
+
+            <lvc:CartesianChart
+                Background="#333333"
+                Margin="8"
+                DrawMarginFrame="{lvc:Frame Stroke={lvc:SolidColorPaint Color={StaticResource gray}, StrokeWidth=2}}"
+                ZoomMode="Both"
+                TooltipPosition="Hidden">
+
+                <lvc:CartesianChart.Series>
+                    <lvc:XamlLineSeries
+                        Values="{Binding Values}"
+                        Stroke="{lvc:SolidColorPaint Color='#2196F3', StrokeWidth=4}"
+                        Fill="{x:Null}"
+                        GeometryFill="{x:Null}"
+                        GeometryStroke="{x:Null}"/>
+                </lvc:CartesianChart.Series>
+
+                <lvc:CartesianChart.XAxes>
+                    <lvc:XamlAxis
+                        NamePaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray1}}"
+                        TextSize="12"
+                        SeparatorsPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray},
+                            StrokeWidth=1,
+                            PathEffect={lvc:Dashed Array='3,3'}}"
+                        SubseparatorsPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray2},
+                            StrokeWidth=0.5}"
+                        SubseparatorsCount="9"
+                        ZeroPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray1},
+                            StrokeWidth=2}"
+                        TicksPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray},
+                            StrokeWidth=1.5}"
+                        SubticksPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray},
+                            StrokeWidth=1}"/>
+                </lvc:CartesianChart.XAxes>
+
+                <lvc:CartesianChart.YAxes>
+                    <lvc:XamlAxis
+                        TextSize="12"
+                        SeparatorsPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray},
+                            StrokeWidth=1,
+                            PathEffect={lvc:Dashed Array='3,3'}}"
+                        SubseparatorsPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray2},
+                            StrokeWidth=0.5}"
+                        SubseparatorsCount="9"
+                        ZeroPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray1},
+                            StrokeWidth=2}"
+                        TicksPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray},
+                            StrokeWidth=1.5}"
+                        SubticksPaint="{lvc:SolidColorPaint
+                            Color={StaticResource gray},
+                            StrokeWidth=1}"/>
+                </lvc:CartesianChart.YAxes>
+
+            </lvc:CartesianChart> -->
+</UserControl>

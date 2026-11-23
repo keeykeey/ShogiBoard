@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace ShogiBoard.Models;
 
@@ -105,5 +106,33 @@ public class GameRecord(
     {
         next.Prev = this;
         BranchNext.Add(next);
+    }
+}
+
+public class GameRecordStore
+{
+    public readonly GameRecordHead GameRecordHead = new();
+    public readonly GameRecordTail GameRecordTail = new();
+    public IGameRecord GameRecordCurrent { get; set; }
+    public ObservableCollection<int?> Scores { get; set; } = [];
+    public GameRecordStore()
+    {
+        GameRecordHead.LinkNext(GameRecordTail);
+        GameRecordCurrent = GameRecordHead;
+    }
+
+    public void Reset()
+    {
+        GameRecordHead.LinkNext(GameRecordTail);
+        GameRecordCurrent = GameRecordHead;
+        Scores.Clear();
+    }
+
+    public void LinkNext(GameRecord gr)
+    {
+        gr.LinkNext(GameRecordTail);
+        GameRecordCurrent.LinkNext(gr);
+        GameRecordCurrent = gr;
+        Scores.Add(gr.Score);
     }
 }
