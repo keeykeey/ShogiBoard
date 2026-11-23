@@ -20,7 +20,9 @@
                 <Image x:Name="BoardImage" Margin="0" Height="400" Width="400"
                     Source="/Assets/one/board.png"
                     PointerPressed="OnBoardPointerPressed"/>
-                <ItemsControl ItemsSource="{Binding Board}">
+                <ItemsControl 
+                    Height="400" Width="360"
+                    ItemsSource="{Binding Board}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="m:BoardRank">
                             <Grid
@@ -28,7 +30,7 @@
                                 RowDefinitions="*"
                                 ColumnSpacing="0"
                                 RowSpacing="0"
-                                Margin="0,4,0,4">
+                                Margin="0,6,0,2">
                                 <Grid.Resources>
                                     <conv:PieceToBitmapConverter x:Key="PieceToBitmap"/>
                                 </Grid.Resources>
