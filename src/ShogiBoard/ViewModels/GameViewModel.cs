@@ -50,7 +50,7 @@ public partial class GameViewModel : ViewModelBase
     }
 
     private string EnginePath { get; set; } = string.Empty;
-    private CancellationTokenSource Cts { get; set; } = new();
+    private CancellationTokenSource? TimerCts { get; set; } = new();
 
     [ObservableProperty]
     public partial IPosition? MoveFrom { get; set; } = null;
@@ -112,7 +112,7 @@ public partial class GameViewModel : ViewModelBase
         GameRecordCurrent = GameRecordHead;
 
         EngineCommunicator.NewGame();
-        CountGameTime(Cts.Token).Background();
+        RestartTimer();
 
         if (!playerIsBlack)
         {
@@ -123,7 +123,7 @@ public partial class GameViewModel : ViewModelBase
     [RelayCommand]
     private void GameEnd()
     {
-        Cts.Cancel();
+        StopTimer();
         GameState.InAGame = false;
         EngineCommunicator.GameDraw();
     }
@@ -143,6 +143,7 @@ public partial class GameViewModel : ViewModelBase
     [RelayCommand]
     private void QuitEngine()
     {
+        StopTimer();
         EngineCommunicator.Quit();
         ClearMoveFrom();
         GameState.InAGame = false;
@@ -251,6 +252,7 @@ public partial class GameViewModel : ViewModelBase
 
     public void KillEngine()
     {
+        StopTimer();
         EngineCommunicator.Kill();
     }
 
@@ -360,9 +362,7 @@ public partial class GameViewModel : ViewModelBase
 
         if (GameState.InAGame)
         {
-            Cts.Cancel();
-            Cts = new();
-            CountGameTime(Cts.Token).Background();
+            RestartTimer();
         }
     }
 
@@ -381,7 +381,7 @@ public partial class GameViewModel : ViewModelBase
             if (bestMove == UsiMessage.RESIGN)
             {
                 GameState.InAGame = false;
-                Cts.Cancel();
+                StopTimer();
                 await DialogService.ShowMessageAsync(title: "Game end", message: "You win !", onCloseText: "ok", h: 120, w: 200);
             }
             else
@@ -393,9 +393,7 @@ public partial class GameViewModel : ViewModelBase
                 GameService.NextTurn(GameState);
                 if (GameState.InAGame)
                 {
-                    Cts.Cancel();
-                    Cts = new();
-                    CountGameTime(Cts.Token).Background();
+                    RestartTimer();
                 }
             }
         }
@@ -478,4 +476,20 @@ public partial class GameViewModel : ViewModelBase
             await Task.Delay(1000, cancellationToken);
         }
     }
+
+    private void StopTimer()
+    {
+        if (TimerCts is null) return;
+        TimerCts.Cancel();
+        TimerCts.Dispose();
+        TimerCts = null;
+    }
+
+    private void RestartTimer()
+    {
+        StopTimer();
+        TimerCts = new CancellationTokenSource();
+        CountGameTime(TimerCts.Token).Background();
+    }
+
 }
