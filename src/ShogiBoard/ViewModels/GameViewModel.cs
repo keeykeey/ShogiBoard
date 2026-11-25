@@ -52,12 +52,6 @@ public partial class GameViewModel : ViewModelBase
     [ObservableProperty]
     public partial IPosition? MoveFrom { get; set; } = null;
 
-    [ObservableProperty]
-    public partial string Response { get; set; } = string.Empty;
-
-    [ObservableProperty]
-    public partial string Message { get; set; } = string.Empty;
-
     private readonly Stack<string> ResponseStacks = [];
 
     [RelayCommand]
@@ -75,13 +69,11 @@ public partial class GameViewModel : ViewModelBase
         }
         catch (TimeoutException e)
         {
-            Response = e.Message;
-            await DialogService.ShowMessageAsync(title: "Start engine timeout", message: $"Please check if engine is valid.\nError message: {Response}", onCloseText: "ok", h: 120, w: 240);
+            await DialogService.ShowMessageAsync(title: "Start engine timeout", message: $"Please check if engine is valid.\nError message: {e.Message}", onCloseText: "ok", h: 120, w: 240);
         }
         catch (Exception e)
         {
-            Response = e.Message;
-            await DialogService.ShowMessageAsync(title: "Start engine failed", message: $"Error message: {Response}", onCloseText: "ok", h: 120, w: 240);
+            await DialogService.ShowMessageAsync(title: "Start engine failed", message: $"Error message: {e.Message}", onCloseText: "ok", h: 120, w: 240);
         }
     }
 
@@ -126,12 +118,6 @@ public partial class GameViewModel : ViewModelBase
     private void FlipBoard()
     {
         IsFlipped = !IsFlipped;
-    }
-
-    [RelayCommand]
-    private void SendMessage()
-    {
-        EngineCommunicator.Send(Message);
     }
 
     [RelayCommand]
@@ -238,7 +224,6 @@ public partial class GameViewModel : ViewModelBase
     private void ResponseReceived(string m)
     {
         Dispatcher.UIThread.Post(() => {
-            Response = m;
             ResponseStacks.Push(m);
         });
     }
@@ -390,7 +375,7 @@ public partial class GameViewModel : ViewModelBase
         }
         catch (Exception e)
         {
-            Response = e.Message;
+            Console.WriteLine($"HandleBestMoveFromEngine failed {e.Message}");
             GameState.InAGame = false;
         }
     }
