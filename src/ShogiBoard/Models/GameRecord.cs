@@ -25,20 +25,6 @@ public class GameRecordHead : IGameRecord
         next.SetPrev(this);
         Next = next;
     }
-
-    public IEnumerable<Move> Moves()
-    {
-        IGameRecord? runner = this;
-        int safeGuard = 500;
-        while(runner is not null && --safeGuard >= 0)
-        {
-            if (runner is GameRecord gm)
-            {
-                yield return gm.Move;
-            }
-            runner = runner.GetNext();
-        }
-    }
 }
 
 public class GameRecordTail : IGameRecord
@@ -105,5 +91,44 @@ public class GameRecord(
     {
         next.Prev = this;
         BranchNext.Add(next);
+    }
+}
+
+public class GameRecordStore
+{
+    public readonly GameRecordHead GameRecordHead = new();
+    public readonly GameRecordTail GameRecordTail = new();
+    public IGameRecord GameRecordCurrent { get; set; }
+    public GameRecordStore()
+    {
+        GameRecordHead.LinkNext(GameRecordTail);
+        GameRecordCurrent = GameRecordHead;
+    }
+
+    public void Reset()
+    {
+        GameRecordHead.LinkNext(GameRecordTail);
+        GameRecordCurrent = GameRecordHead;
+    }
+
+    public void LinkNext(GameRecord gr)
+    {
+        gr.LinkNext(GameRecordTail);
+        GameRecordCurrent.LinkNext(gr);
+        GameRecordCurrent = gr;
+    }
+
+    public IEnumerable<Move> Moves()
+    {
+        IGameRecord? runner = GameRecordHead;
+        int safeGuard = 500;
+        while(runner is not null && --safeGuard >= 0)
+        {
+            if (runner is GameRecord gm)
+            {
+                yield return gm.Move;
+            }
+            runner = runner.GetNext();
+        }
     }
 }

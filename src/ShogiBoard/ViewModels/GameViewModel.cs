@@ -18,9 +18,7 @@ public partial class GameViewModel : ViewModelBase
     public IGameService GameService { get; }
     public IDialogService DialogService { get; }
     private GameState GameState { get; set; }
-    private readonly GameRecordHead GameRecordHead = new();
-    private readonly GameRecordTail GameRecordTail = new();
-    private IGameRecord GameRecordCurrent { get; set; }
+    private GameRecordStore GameRecordStore { get; set; }
     public ObservableCollection<BoardRank> Board { get; set; }
     [ObservableProperty] public partial GameTime TimeSetting { get; set; }
     [ObservableProperty] public partial GameTime BlackTimeLeft { get; set; }
@@ -33,14 +31,13 @@ public partial class GameViewModel : ViewModelBase
     public ObservableCollection<PieceOnStand> TopPieceStand    => IsFlipped ? GameState.BlackPieceStand.Data : GameState.WhitePieceStand.Data;
     public ObservableCollection<PieceOnStand> BottomPieceStand => IsFlipped ? GameState.WhitePieceStand.Data : GameState.BlackPieceStand.Data;
 
-    public GameViewModel(IEngineCommunicationService ecs, IGameService gs, IDialogService ds)
+    public GameViewModel(IEngineCommunicationService ecs, IGameService gs, IDialogService ds, GameState gameState, GameRecordStore gameRecordStore)
     {
         EngineCommunicator = ecs;
         GameService  = gs;
         DialogService  = ds;
-        GameState = new(byoyomi: 10, timeControlMin: 0, timeControlSec: 0);
-        GameRecordHead.LinkNext(GameRecordTail);
-        GameRecordCurrent = GameRecordHead;
+        GameState = gameState;
+        GameRecordStore = gameRecordStore;
         GameService.Init9DimBoardData(GameState);
         Board b = GameState.Board;
         Board = [b.A, b.B, b.C, b.D, b.E, b.F, b.G, b.H, b.I];
@@ -61,8 +58,6 @@ public partial class GameViewModel : ViewModelBase
     [ObservableProperty]
     public partial string Message { get; set; } = string.Empty;
 
-    [ObservableProperty]
-    public partial int Score { get; set; } = 0;
     private readonly Stack<string> ResponseStacks = [];
 
     [RelayCommand]
@@ -108,8 +103,7 @@ public partial class GameViewModel : ViewModelBase
         BlackTimeLeft.Set(TimeSetting.ByoyomiSec, TimeSetting.TimeControlMin, TimeSetting.TimeControlSec);
         WhiteTimeLeft.Set(TimeSetting.ByoyomiSec, TimeSetting.TimeControlMin, TimeSetting.TimeControlSec);
         
-        GameRecordHead.LinkNext(GameRecordTail);
-        GameRecordCurrent = GameRecordHead;
+        GameRecordStore.Reset();
 
         EngineCommunicator.NewGame();
         RestartTimer();
@@ -158,18 +152,17 @@ public partial class GameViewModel : ViewModelBase
             return;
         }
         GameService.InitGameState(gameState: GameState, inAGame: false, playerIsBlack: true, blackCanMovePiece: true);
-        GameRecordHead.LinkNext(GameRecordTail);
-        GameRecordCurrent = GameRecordHead;
+        GameRecordStore.Reset();
     }
 
     [RelayCommand]
     private void OnPlayBackPrev()
     {
-        if (GameRecordCurrent is GameRecordHead)
+        if (GameRecordStore.GameRecordCurrent is GameRecordHead)
         {
             return;
         }
-        else if (GameRecordCurrent is GameRecord gr)
+        else if (GameRecordStore.GameRecordCurrent is GameRecord gr)
         {
             GameService.BoardDataPrev(
                 from: gr.Move.MoveTo,  // intentionally set Move.MoveTo to from argument because this process roll backs the state.
@@ -182,15 +175,15 @@ public partial class GameViewModel : ViewModelBase
             IGameRecord? prev = gr.GetPrev();
             if (prev is not null)
             {
-                GameRecordCurrent = prev;
+                GameRecordStore.GameRecordCurrent = prev;
             }
         }
-        else if (GameRecordCurrent is GameRecordTail grt)
+        else if (GameRecordStore.GameRecordCurrent is GameRecordTail grt)
         {
             IGameRecord? prev = grt.GetPrev();
             if (prev is not null)
             {
-                GameRecordCurrent = prev;
+                GameRecordStore.GameRecordCurrent = prev;
             }
             OnPlayBackPrev();
         }
@@ -199,11 +192,11 @@ public partial class GameViewModel : ViewModelBase
     [RelayCommand]
     private void OnPlayBackNext()
     {
-        if (GameRecordCurrent.GetNext() is GameRecordHead _)
+        if (GameRecordStore.GameRecordCurrent.GetNext() is GameRecordHead _)
         {
             throw new Exception("Unexpected behavior that GameRecordCurrent.GetNext() returns GameRecordHead");
         }
-        else if (GameRecordCurrent.GetNext() is GameRecord gr)
+        else if (GameRecordStore.GameRecordCurrent.GetNext() is GameRecord gr)
         {
             GameService.BoardDataNext(
                 from: gr.Move.MoveFrom,  // intentionally set Move.MoveTo to from argument because this process roll backs the state.
@@ -212,9 +205,9 @@ public partial class GameViewModel : ViewModelBase
                 state: GameState
             );
 
-            GameRecordCurrent = gr;
+            GameRecordStore.GameRecordCurrent = gr;
         }
-        else if (GameRecordCurrent.GetNext() is GameRecordTail _)
+        else if (GameRecordStore.GameRecordCurrent.GetNext() is GameRecordTail _)
         {
             return;
         }
@@ -224,7 +217,7 @@ public partial class GameViewModel : ViewModelBase
     private void OnPlayBackStart()
     {
         int safeGuard = 500;
-        while (GameRecordCurrent.GetPrev() is not null)
+        while (GameRecordStore.GameRecordCurrent.GetPrev() is not null)
         {
             OnPlayBackPrev();
             if (--safeGuard <= 0) break;
@@ -235,7 +228,7 @@ public partial class GameViewModel : ViewModelBase
     private void OnPlayBackLast()
     {
         int safeGuard = 500;
-        while (GameRecordCurrent.GetNext() is not null)
+        while (GameRecordStore.GameRecordCurrent.GetNext() is not null)
         {
             OnPlayBackNext();
             if (--safeGuard <= 0) break;
@@ -346,9 +339,7 @@ public partial class GameViewModel : ViewModelBase
             timeControlSecWhite: WhiteTimeLeft.TimeControlSec);
         ResponseStacks.Clear();
 
-        gr.LinkNext(GameRecordTail);
-        GameRecordCurrent.LinkNext(gr);
-        GameRecordCurrent = gr;
+        GameRecordStore.LinkNext(gr);
     }
 
     private void NextGameState(IPosition from, Tile to, bool playerDoPromote)
@@ -370,7 +361,7 @@ public partial class GameViewModel : ViewModelBase
     {
         try
         {
-            IEnumerable<Move> moves = GameRecordHead is null ? [] : GameRecordHead.Moves();
+            IEnumerable<Move> moves = GameRecordStore.Moves();
             string bestMoveResponse = await EngineCommunicator.SendSfen(
                 moves,
                 BlackTimeLeft,
@@ -491,5 +482,4 @@ public partial class GameViewModel : ViewModelBase
         TimerCts = new CancellationTokenSource();
         CountGameTime(TimerCts.Token).Background();
     }
-
 }

@@ -6,9 +6,9 @@ using System.Runtime.CompilerServices;
 namespace ShogiBoard.Models;
 
 public class GameState(
-    int byoyomi,
-    int timeControlMin,
-    int timeControlSec,
+    int byoyomi = 0,
+    int timeControlMin = 0,
+    int timeControlSec = 0,
     bool inAGame = false,
     bool playerIsBlack = true,
     bool blackCanMovePiece = true)

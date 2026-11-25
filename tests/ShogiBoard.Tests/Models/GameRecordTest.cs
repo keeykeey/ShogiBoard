@@ -66,26 +66,6 @@ public class GameRecordTest
     }
 
     [Fact]
-    public void GameRecord_Moves_Test()
-    {
-        Move m = new("5i5h", true);
-        Move m2 = new("5a5b", false);
-        Move m3 = new("P*5e", true);
-        Move m4 = new("2d2c+", false);
-        GameRecordHead head = new();
-        GameRecord gr = new(m);
-        GameRecord gr2 = new(m2);
-        GameRecord gr3 = new(m3);
-        GameRecord gr4 = new(m4);
-        head.LinkNext(gr);
-        gr.LinkNext(gr2);
-        gr2.LinkNext(gr3);
-        gr3.LinkNext(gr4);
-
-        Assert.Equal("5i5h 5a5b P*5e 2d2c+", string.Join(" ", head.Moves()));
-    }
-
-    [Fact]
     public void GameRecord_TimeControl_Test()
     {
         Move m = new("5i5h", true);
@@ -112,5 +92,29 @@ public class GameRecordTest
         Assert.Equal(9, gr2.ByoyomiWhite);
         Assert.Equal(4, gr2.TimeControlMinWhite);
         Assert.Equal(2, gr2.TimeControlSecWhite);
+    }
+
+    [Fact]
+    public void GameRecordStore_Moves_Test()
+    {
+        Move m = new("5i5h", true);
+        Move m2 = new("5a5b", false);
+        Move m3 = new("P*5e", true);
+        Move m4 = new("2d2c+", false);
+        GameRecordStore store = new();
+        GameRecord gr = new(m);
+        GameRecord gr2 = new(m2);
+        GameRecord gr3 = new(m3);
+        GameRecord gr4 = new(m4);
+        store.LinkNext(gr);
+        store.LinkNext(gr2);
+        store.LinkNext(gr3);
+        store.LinkNext(gr4);
+
+        Assert.Equal("5i5h 5a5b P*5e 2d2c+", string.Join(" ", store.Moves()));
+
+        store.Reset();
+
+        Assert.Equal("", string.Join(" ", store.Moves()));
     }
 }
