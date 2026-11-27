@@ -6,9 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ShogiBoard.Models;
 using ShogiBoard.Services;
-using ShogiBoard.Helper;
 using System.Threading.Tasks;
-using System.Threading;
 
 namespace ShogiBoard.ViewModels;
 
@@ -17,12 +15,11 @@ public partial class GameViewModel : ViewModelBase
     public IEngineCommunicationService EngineCommunicator { get; }
     public IGameService GameService { get; }
     public IDialogService DialogService { get; }
+    private ITimerService TimerService { get; }
     private GameState GameState { get; set; }
     private GameRecordStore GameRecordStore { get; set; }
     public ObservableCollection<BoardRank> Board { get; set; }
-    [ObservableProperty] public partial GameTime TimeSetting { get; set; }
-    [ObservableProperty] public partial GameTime BlackTimeLeft { get; set; }
-    [ObservableProperty] public partial GameTime WhiteTimeLeft { get; set; }
+    public TimerStore TimerStore { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TopPieceStand), nameof(BottomPieceStand))]
@@ -31,23 +28,21 @@ public partial class GameViewModel : ViewModelBase
     public ObservableCollection<PieceOnStand> TopPieceStand    => IsFlipped ? GameState.BlackPieceStand.Data : GameState.WhitePieceStand.Data;
     public ObservableCollection<PieceOnStand> BottomPieceStand => IsFlipped ? GameState.WhitePieceStand.Data : GameState.BlackPieceStand.Data;
 
-    public GameViewModel(IEngineCommunicationService ecs, IGameService gs, IDialogService ds, GameState gameState, GameRecordStore gameRecordStore)
+    public GameViewModel(IEngineCommunicationService ecs, IGameService gs, IDialogService ds, ITimerService timerService, GameState gameState, GameRecordStore gameRecordStore, TimerStore timerStore)
     {
         EngineCommunicator = ecs;
         GameService  = gs;
         DialogService  = ds;
+        TimerService = timerService;
         GameState = gameState;
         GameRecordStore = gameRecordStore;
         GameService.Init9DimBoardData(GameState);
         Board b = GameState.Board;
         Board = [b.A, b.B, b.C, b.D, b.E, b.F, b.G, b.H, b.I];
-        TimeSetting = GameState.TimeSetting;
-        BlackTimeLeft = GameState.BlackTimeLeft;
-        WhiteTimeLeft = GameState.WhiteTimeLeft;
+        TimerStore = timerStore;
     }
 
     private string EnginePath { get; set; } = string.Empty;
-    private CancellationTokenSource? TimerCts { get; set; } = new();
 
     [ObservableProperty]
     public partial IPosition? MoveFrom { get; set; } = null;
@@ -92,13 +87,12 @@ public partial class GameViewModel : ViewModelBase
 
         IsFlipped = !playerIsBlack;
         GameService.InitGameState(gameState: GameState, inAGame: true, playerIsBlack: playerIsBlack, blackCanMovePiece: true);
-        BlackTimeLeft.Set(TimeSetting.ByoyomiSec, TimeSetting.TimeControlMin, TimeSetting.TimeControlSec);
-        WhiteTimeLeft.Set(TimeSetting.ByoyomiSec, TimeSetting.TimeControlMin, TimeSetting.TimeControlSec);
+        TimerStore.Reset();
         
         GameRecordStore.Reset();
 
         EngineCommunicator.NewGame();
-        RestartTimer();
+        TimerService.RestartTimer(timerStore: TimerStore, turnIsBlack: GameState.BlackCanMovePiece, TimeLose);
 
         if (!playerIsBlack)
         {
@@ -109,7 +103,7 @@ public partial class GameViewModel : ViewModelBase
     [RelayCommand]
     private void GameEnd()
     {
-        StopTimer();
+        TimerService.StopTimer(timerStore: TimerStore);
         GameState.InAGame = false;
         EngineCommunicator.GameDraw();
     }
@@ -123,7 +117,7 @@ public partial class GameViewModel : ViewModelBase
     [RelayCommand]
     private void QuitEngine()
     {
-        StopTimer();
+        TimerService.StopTimer(timerStore: TimerStore);
         EngineCommunicator.Quit();
         ClearMoveFrom();
         GameState.InAGame = false;
@@ -230,7 +224,7 @@ public partial class GameViewModel : ViewModelBase
 
     public void KillEngine()
     {
-        StopTimer();
+        TimerService.StopTimer(timerStore: TimerStore);
         EngineCommunicator.Kill();
     }
 
@@ -316,12 +310,12 @@ public partial class GameViewModel : ViewModelBase
             move: m,
             pieceTaked: pieceToTake,
             score: score,
-            byoyomiBlack: BlackTimeLeft.ByoyomiSec,
-            timeControlMinBlack: BlackTimeLeft.TimeControlMin,
-            timeControlSecBlack: BlackTimeLeft.TimeControlSec,
-            byoyomiWhite: WhiteTimeLeft.ByoyomiSec,
-            timeControlMinWhite: WhiteTimeLeft.TimeControlMin,
-            timeControlSecWhite: WhiteTimeLeft.TimeControlSec);
+            byoyomiBlack: TimerStore.BlackTimeLeft.ByoyomiSec,
+            timeControlMinBlack: TimerStore.BlackTimeLeft.TimeControlMin,
+            timeControlSecBlack: TimerStore.BlackTimeLeft.TimeControlSec,
+            byoyomiWhite: TimerStore.WhiteTimeLeft.ByoyomiSec,
+            timeControlMinWhite: TimerStore.WhiteTimeLeft.TimeControlMin,
+            timeControlSecWhite: TimerStore.WhiteTimeLeft.TimeControlSec);
         ResponseStacks.Clear();
 
         GameRecordStore.LinkNext(gr);
@@ -338,7 +332,7 @@ public partial class GameViewModel : ViewModelBase
 
         if (GameState.InAGame)
         {
-            RestartTimer();
+            TimerService.RestartTimer(timerStore: TimerStore, turnIsBlack: GameState.BlackCanMovePiece, TimeLose);
         }
     }
 
@@ -349,15 +343,15 @@ public partial class GameViewModel : ViewModelBase
             IEnumerable<Move> moves = GameRecordStore.Moves();
             string bestMoveResponse = await EngineCommunicator.SendSfen(
                 moves,
-                BlackTimeLeft,
-                WhiteTimeLeft,
-                GameState.PlayerIsBlack ? WhiteTimeLeft.ByoyomiMiliSec : BlackTimeLeft.ByoyomiMiliSec);
+                TimerStore.BlackTimeLeft,
+                TimerStore.WhiteTimeLeft,
+                GameState.PlayerIsBlack ? TimerStore.WhiteTimeLeft.ByoyomiMiliSec : TimerStore.BlackTimeLeft.ByoyomiMiliSec);
             string bestMove = UsiParser.ParseBestmove(bestMoveResponse);
 
             if (bestMove == UsiMessage.RESIGN)
             {
                 GameState.InAGame = false;
-                StopTimer();
+                TimerService.StopTimer(TimerStore);
                 await DialogService.ShowMessageAsync(title: "Game end", message: "You win !", onCloseText: "ok", h: 120, w: 200);
             }
             else
@@ -369,7 +363,7 @@ public partial class GameViewModel : ViewModelBase
                 GameService.NextTurn(GameState);
                 if (GameState.InAGame)
                 {
-                    RestartTimer();
+                    TimerService.RestartTimer(TimerStore, GameState.BlackCanMovePiece, TimeLose);
                 }
             }
         }
@@ -380,91 +374,9 @@ public partial class GameViewModel : ViewModelBase
         }
     }
 
-    private async Task CountGameTime(CancellationToken cts)
+    private async Task TimeLose()
     {
-        GameTime timeLeft = GameState.BlackCanMovePiece ? BlackTimeLeft : WhiteTimeLeft;
-        timeLeft.Set(
-            byoyomi:        TimeSetting.ByoyomiSec,
-            timeControlMin: timeLeft.TimeControlMin,
-            timeControlSec: timeLeft.TimeControlSec
-        );
-
-        if (timeLeft.NoTimeLeft)
-        {
-            bool ok = await CountByoyomi(timeLeft, cts);
-            if (!ok)
-            {
-                GameEnd();
-                // TODO: create more appropriate dialog
-                await DialogService.ShowMessageAsync(title: "Game End", message: "You lose", onCloseText: "ok", h: 120, w: 200);
-            }
-        }
-        else
-        {
-            await CountTimeControl(timeLeft, cts);
-            if (timeLeft.NoTimeLeft)
-            {
-                bool ok = await CountByoyomi(timeLeft, cts);
-                if (!ok)
-                {
-                    GameEnd();
-                    // TODO: create more appropriate dialog
-                    await DialogService.ShowMessageAsync(title: "Game End", message: "You lose", onCloseText: "ok", h: 120, w: 200);
-                }
-            }
-            else
-            {
-                throw new Exception("Unexpected behavior of CountGameTime");
-            }
-        }
-    }
-
-    private async Task<bool> CountByoyomi(GameTime timeLeft, CancellationToken cancellationToken)
-    {
-        int c = TimeSetting.ByoyomiSec;
-        for (int i = 0; i < c; ++i)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            timeLeft.Set(
-                byoyomi: timeLeft.ByoyomiSec - 1,
-                timeControlMin: null,
-                timeControlSec: null
-            );
-            await Task.Delay(1000, cancellationToken);
-        }
-
-        return false;
-    }
-
-    private static async Task CountTimeControl(GameTime timeLeft, CancellationToken cancellationToken)
-    {
-        int c = timeLeft.TimeControlMin * 60 + timeLeft.TimeControlSec;
-        for (int i = 0; i < c; ++i)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            int byou = timeLeft.TimeControlSec == 0 ? 59 : timeLeft.TimeControlSec - 1;
-            int min = byou == 59 ? timeLeft.TimeControlMin - 1 : timeLeft.TimeControlMin;
-            timeLeft.Set(
-                byoyomi: timeLeft.ByoyomiSec,
-                timeControlMin: min,
-                timeControlSec: byou
-            );
-            await Task.Delay(1000, cancellationToken);
-        }
-    }
-
-    private void StopTimer()
-    {
-        if (TimerCts is null) return;
-        TimerCts.Cancel();
-        TimerCts.Dispose();
-        TimerCts = null;
-    }
-
-    private void RestartTimer()
-    {
-        StopTimer();
-        TimerCts = new CancellationTokenSource();
-        CountGameTime(TimerCts.Token).Background();
+        GameEnd();
+        await DialogService.ShowMessageAsync(title: "Game End", message: "You lose", onCloseText: "ok", h: 120, w: 200);
     }
 }

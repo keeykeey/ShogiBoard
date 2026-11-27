@@ -28,11 +28,11 @@
                 <Button Grid.Row="0" Grid.Column="2" HorizontalAlignment="Left" Command="{Binding InitializeBoardCommand}">Initialize Board</Button>
                 <StackPanel Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left">
                     <TextBlock Text="Byoyomi"/>
-                    <NumericUpDown Value="{Binding TimeSetting.ByoyomiSec}" Minimum="0" Maximum="60" FormatString="0"/>
+                    <NumericUpDown Value="{Binding TimerStore.TimeSetting.ByoyomiSec}" Minimum="0" Maximum="60" FormatString="0"/>
                 </StackPanel>
                 <StackPanel Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left">
                     <TextBlock Text="TimeControl"/>
-                    <NumericUpDown Value="{Binding TimeSetting.TimeControlMin}" Minimum="0" Maximum="60" FormatString="0"/>
+                    <NumericUpDown Value="{Binding TimerStore.TimeSetting.TimeControlMin}" Minimum="0" Maximum="60" FormatString="0"/>
                 </StackPanel>
                 <StackPanel Grid.Row="1" Grid.Column="3" HorizontalAlignment="Left">
                     <Grid
@@ -41,19 +41,19 @@
                     >
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Black"/>
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Min: "/>
-                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding BlackTimeLeft.TimeControlMin}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TimerStore.BlackTimeLeft.TimeControlMin}"/>
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="Sec: "/>
-                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding BlackTimeLeft.TimeControlSec}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding TimerStore.BlackTimeLeft.TimeControlSec}"/>
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="Byoyomi: "/>
-                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding BlackTimeLeft.ByoyomiSec}"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding TimerStore.BlackTimeLeft.ByoyomiSec}"/>
 
                         <TextBlock Grid.Row="0" Grid.Column="2" Text="White"/>
                         <TextBlock Grid.Row="1" Grid.Column="2" Text="Min: "/>
-                        <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding WhiteTimeLeft.TimeControlMin}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding TimerStore.WhiteTimeLeft.TimeControlMin}"/>
                         <TextBlock Grid.Row="2" Grid.Column="2" Text="Sec: "/>
-                        <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding WhiteTimeLeft.TimeControlSec}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding TimerStore.WhiteTimeLeft.TimeControlSec}"/>
                         <TextBlock Grid.Row="3" Grid.Column="2" Text="Byoyomi: "/>
-                        <TextBlock Grid.Row="3" Grid.Column="3" Text="{Binding WhiteTimeLeft.ByoyomiSec}"/>
+                        <TextBlock Grid.Row="3" Grid.Column="3" Text="{Binding TimerStore.WhiteTimeLeft.ByoyomiSec}"/>
                     </Grid>
                 </StackPanel>
             </Grid>
