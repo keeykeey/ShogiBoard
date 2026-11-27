@@ -28,6 +28,7 @@ public partial class App : Application
         service.AddTransient<IDialogService, DialogService>();
         service.AddTransient<ITimerService, TimerService>();
         service.AddTransient<GameViewModel>();
+        service.AddTransient<PlaybackViewModel>();
         service.AddTransient<MainViewModel>();
 
         var provider = service.BuildServiceProvider();

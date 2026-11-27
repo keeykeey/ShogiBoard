@@ -11,9 +11,10 @@ namespace ShogiBoard.ViewModels;
 
 public partial class GameViewModel : ViewModelBase
 {
-    public IEngineCommunicationService EngineCommunicator { get; }
-    public IGameService GameService { get; }
-    public IDialogService DialogService { get; }
+    public PlaybackViewModel PlaybackViewModel { get; }
+    private IEngineCommunicationService EngineCommunicator { get; }
+    private IGameService GameService { get; }
+    private IDialogService DialogService { get; }
     private ITimerService TimerService { get; }
     private GameState GameState { get; set; }
     private GameRecordStore GameRecordStore { get; set; }
@@ -27,8 +28,9 @@ public partial class GameViewModel : ViewModelBase
     public ObservableCollection<PieceOnStand> TopPieceStand    => IsFlipped ? GameState.BlackPieceStand.Data : GameState.WhitePieceStand.Data;
     public ObservableCollection<PieceOnStand> BottomPieceStand => IsFlipped ? GameState.WhitePieceStand.Data : GameState.BlackPieceStand.Data;
 
-    public GameViewModel(IEngineCommunicationService ecs, IGameService gs, IDialogService ds, ITimerService timerService, GameState gameState, GameRecordStore gameRecordStore, TimerStore timerStore)
+    public GameViewModel(PlaybackViewModel playbackViewModel, IEngineCommunicationService ecs, IGameService gs, IDialogService ds, ITimerService timerService, GameState gameState, GameRecordStore gameRecordStore, TimerStore timerStore)
     {
+        PlaybackViewModel = playbackViewModel;
         EngineCommunicator = ecs;
         GameService  = gs;
         DialogService  = ds;
@@ -43,8 +45,7 @@ public partial class GameViewModel : ViewModelBase
 
     private string EnginePath { get; set; } = string.Empty;
 
-    [ObservableProperty]
-    public partial IPosition? MoveFrom { get; set; } = null;
+    private IPosition? MoveFrom { get; set; } = null;
 
     [RelayCommand]
     private async Task StartEngine()
@@ -130,86 +131,6 @@ public partial class GameViewModel : ViewModelBase
         }
         GameService.InitGameState(gameState: GameState, inAGame: false, playerIsBlack: true, blackCanMovePiece: true);
         GameRecordStore.Reset();
-    }
-
-    [RelayCommand]
-    private void OnPlayBackPrev()
-    {
-        if (GameRecordStore.GameRecordCurrent is GameRecordHead)
-        {
-            return;
-        }
-        else if (GameRecordStore.GameRecordCurrent is GameRecord gr)
-        {
-            GameService.BoardDataPrev(
-                from: gr.Move.MoveTo,  // intentionally set Move.MoveTo to from argument because this process roll backs the state.
-                to: gr.Move.MoveFrom,  // intentionally set Move.MoveFrom to to argument because this process roll backs the state.
-                promoted: gr.Move.DoPromote,
-                pieceTaked: gr.PieceTaked,
-                state: GameState
-            );
-
-            IGameRecord? prev = gr.GetPrev();
-            if (prev is not null)
-            {
-                GameRecordStore.GameRecordCurrent = prev;
-            }
-        }
-        else if (GameRecordStore.GameRecordCurrent is GameRecordTail grt)
-        {
-            IGameRecord? prev = grt.GetPrev();
-            if (prev is not null)
-            {
-                GameRecordStore.GameRecordCurrent = prev;
-            }
-            OnPlayBackPrev();
-        }
-    }
-
-    [RelayCommand]
-    private void OnPlayBackNext()
-    {
-        if (GameRecordStore.GameRecordCurrent.GetNext() is GameRecordHead _)
-        {
-            throw new Exception("Unexpected behavior that GameRecordCurrent.GetNext() returns GameRecordHead");
-        }
-        else if (GameRecordStore.GameRecordCurrent.GetNext() is GameRecord gr)
-        {
-            GameService.BoardDataNext(
-                from: gr.Move.MoveFrom,  // intentionally set Move.MoveTo to from argument because this process roll backs the state.
-                to: gr.Move.MoveTo,  // intentionally set Move.MoveFrom to to argument because this process roll backs the state.
-                promote: gr.Move.DoPromote,
-                state: GameState
-            );
-
-            GameRecordStore.GameRecordCurrent = gr;
-        }
-        else if (GameRecordStore.GameRecordCurrent.GetNext() is GameRecordTail _)
-        {
-            return;
-        }
-    }
-
-    [RelayCommand]
-    private void OnPlayBackStart()
-    {
-        int safeGuard = 500;
-        while (GameRecordStore.GameRecordCurrent.GetPrev() is not null)
-        {
-            OnPlayBackPrev();
-            if (--safeGuard <= 0) break;
-        }
-    }
-
-    [RelayCommand]
-    private void OnPlayBackLast()
-    {
-        int safeGuard = 500;
-        while (GameRecordStore.GameRecordCurrent.GetNext() is not null)
-        {
-            OnPlayBackNext();
-            if (--safeGuard <= 0) break;
-        }
     }
 
     public void KillEngine()
