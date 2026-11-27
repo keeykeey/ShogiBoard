@@ -1,7 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
-using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ShogiBoard.Models;
@@ -47,8 +46,6 @@ public partial class GameViewModel : ViewModelBase
     [ObservableProperty]
     public partial IPosition? MoveFrom { get; set; } = null;
 
-    private readonly Stack<string> ResponseStacks = [];
-
     [RelayCommand]
     private async Task StartEngine()
     {
@@ -60,7 +57,7 @@ public partial class GameViewModel : ViewModelBase
 
         try
         {
-            await EngineCommunicator.StartAsync(EnginePath, ResponseReceived);
+            await EngineCommunicator.StartAsync(EnginePath);
         }
         catch (TimeoutException e)
         {
@@ -215,13 +212,6 @@ public partial class GameViewModel : ViewModelBase
         }
     }
 
-    private void ResponseReceived(string m)
-    {
-        Dispatcher.UIThread.Post(() => {
-            ResponseStacks.Push(m);
-        });
-    }
-
     public void KillEngine()
     {
         TimerService.StopTimer(timerStore: TimerStore);
@@ -305,7 +295,7 @@ public partial class GameViewModel : ViewModelBase
 
     private void GameRecordSetNext(Move m, string pieceToTake)
     {
-        int? score = UsiParser.ExtractScoreOfMove(ResponseStacks, m.ToString());
+        int? score = UsiParser.ExtractScoreOfMove(EngineCommunicator.PopAllResponseStack(), m.ToString());
         GameRecord gr = new(
             move: m,
             pieceTaked: pieceToTake,
@@ -316,7 +306,6 @@ public partial class GameViewModel : ViewModelBase
             byoyomiWhite: TimerStore.WhiteTimeLeft.ByoyomiSec,
             timeControlMinWhite: TimerStore.WhiteTimeLeft.TimeControlMin,
             timeControlSecWhite: TimerStore.WhiteTimeLeft.TimeControlSec);
-        ResponseStacks.Clear();
 
         GameRecordStore.LinkNext(gr);
     }

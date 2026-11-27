@@ -22,6 +22,7 @@ public partial class App : Application
         service.AddSingleton<GameState>();
         service.AddSingleton<GameRecordStore>();
         service.AddSingleton<TimerStore>();
+        service.AddSingleton<UsiCommunication>();
         service.AddTransient<IEngineCommunicationService, EngineCommunicationService>();
         service.AddTransient<IGameService, GameService>();
         service.AddTransient<IDialogService, DialogService>();

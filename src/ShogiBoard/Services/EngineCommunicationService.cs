@@ -11,7 +11,7 @@ public interface IEngineCommunicationService
 {
     void Send(string m);
     Task<string> SendAsync(string m, Func<string, bool> isResponse, TimeSpan? timeout = null);
-    Task StartAsync(string executablePath, Action<string>? responseReceived);
+    Task StartAsync(string executablePath);
     Task<string> SendSfen(IEnumerable<Move> moves, GameTime bgt, GameTime wgt, int byoyomiMiliSec);
     string CreateSfen(IEnumerable<Move> moves);
     void Quit();
@@ -20,16 +20,17 @@ public interface IEngineCommunicationService
     void GameWin();
     void GameLose();
     void GameDraw();
+    IEnumerable<string> PopAllResponseStack();
 }
 
-public class EngineCommunicationService : IEngineCommunicationService
+public class EngineCommunicationService(UsiCommunication usi) : IEngineCommunicationService
 {
-    public UsiCommunication Usi { get; set; } = new UsiCommunication();
+    public UsiCommunication Usi { get; set; } = usi;
 
     private readonly Lock _lock = new();
     private (Func<string, bool> IsResponse, TaskCompletionSource<string> Tcs)? _pending;
 
-    public async Task StartAsync(string executablePath, Action<string>? responseReceived)
+    public async Task StartAsync(string executablePath)
     {
         if (Usi.EngineProcess is { HasExited: false }) return;
 
@@ -43,7 +44,7 @@ public class EngineCommunicationService : IEngineCommunicationService
         };
 
         Usi.EngineProcess = new Process{ StartInfo=psi, EnableRaisingEvents=true };
-        Usi.EngineProcess.OutputDataReceived += (_, args) => OutputDataReceived(args, responseReceived);
+        Usi.EngineProcess.OutputDataReceived += (_, args) => OutputDataReceived(args);
         Usi.EngineProcess.Exited += (_, _) =>
         {
             lock (_lock) { _pending?.Tcs.TrySetException(new InvalidOperationException("Engine exited")); }
@@ -64,7 +65,7 @@ public class EngineCommunicationService : IEngineCommunicationService
         }
     }
 
-    private void OutputDataReceived(DataReceivedEventArgs args, Action<string>? responseReceived)
+    private void OutputDataReceived(DataReceivedEventArgs args)
     {
         if (args.Data is null) return;
 
@@ -75,7 +76,7 @@ public class EngineCommunicationService : IEngineCommunicationService
                 p.Tcs.TrySetResult(args.Data);
             }
         }
-        responseReceived?.Invoke(args.Data);
+        Usi.ResponseStacks.Push(args.Data);
     }
 
     public void Send(string m)
@@ -162,5 +163,13 @@ public class EngineCommunicationService : IEngineCommunicationService
     public void GameDraw()
     {
         Send($"{UsiMessage.GAME_OVER} {UsiMessage.DRAW}");
+    }
+
+    public IEnumerable<string> PopAllResponseStack()
+    {
+        while (Usi.ResponseStacks.TryPop(out string? s))
+        {
+            yield return s;
+        }
     }
 }
