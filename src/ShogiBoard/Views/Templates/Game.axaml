@@ -12,6 +12,6 @@
               <parts:PieceStandView Pieces="{Binding TopPieceStand}" />
               <parts:Board />
               <parts:PieceStandView Pieces="{Binding BottomPieceStand}" />
-              <parts:Playback />
+              <parts:Playback DataContext="{Binding PlaybackViewModel}"/>
             </StackPanel>
 </UserControl>

@@ -5,7 +5,7 @@
              xmlns:vm="using:ShogiBoard.ViewModels"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              Width="480"
-             x:DataType="vm:GameViewModel"
+             x:DataType="vm:PlaybackViewModel"
              x:Class="ShogiBoard.Views.Parts.Playback">
             <Grid
               ColumnDefinitions="*,*,*,*"

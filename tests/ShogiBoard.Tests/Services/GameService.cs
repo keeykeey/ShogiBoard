@@ -10,7 +10,7 @@ public class GameServiceTest
     [InlineData("lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL")]
     public void SetBoardDataTest_Positive(string text)
     {
-        GameState gs = new(byoyomi: 1, timeControlMin: 1, timeControlSec: 1);
+        GameState gs = new();
         GameService service = new();
         service.SetBoardData(gs, text);
 
@@ -72,7 +72,6 @@ public class GameServiceTest
         Tile to = new(tofile, torank);
 
         GameState gs = new(
-            byoyomi: 1, timeControlMin: 1, timeControlSec: 1,
             inAGame: true,
             playerIsBlack: true,
             blackCanMovePiece:blackCanMovePiece
@@ -95,7 +94,6 @@ public class GameServiceTest
 
         GameService service = new();
         GameState gs = new(
-            byoyomi: 1, timeControlMin: 1, timeControlSec: 1,
             inAGame: true,
             playerIsBlack: true,
             blackCanMovePiece: true
@@ -127,7 +125,6 @@ public class GameServiceTest
 
         GameService service = new();
         GameState gs = new(
-            byoyomi: 1, timeControlMin: 1, timeControlSec: 1,
             inAGame: true,
             playerIsBlack: true,
             blackCanMovePiece: false
@@ -153,7 +150,6 @@ public class GameServiceTest
     {
         GameService service = new();
         GameState gs = new(
-            byoyomi: 1, timeControlMin: 1, timeControlSec: 1,
             inAGame: true,
             playerIsBlack: true,
             blackCanMovePiece: true
@@ -189,7 +185,6 @@ public class GameServiceTest
     {
         GameService service = new();
         GameState gs = new(
-            byoyomi: 1, timeControlMin: 1, timeControlSec: 1,
             inAGame: true,
             playerIsBlack: true,
             blackCanMovePiece: false
@@ -234,7 +229,6 @@ public class GameServiceTest
 
         GameService service = new();
         GameState gs = new(
-            byoyomi: 1, timeControlMin: 1, timeControlSec: 1,
             inAGame: true,
             playerIsBlack: true,
             blackCanMovePiece: true
@@ -278,7 +272,6 @@ public class GameServiceTest
         Move m = new(howMoved, restoreBlackPlayersMove);
 
         GameState gs = new(
-            byoyomi: 1, timeControlMin: 1, timeControlSec: 1,
             inAGame: true,
             playerIsBlack: true,
             blackCanMovePiece: !restoreBlackPlayersMove
@@ -341,7 +334,7 @@ public class GameServiceTest
     [InlineData("9/7P1/9/9/4b4/9/9/9/9", "5e", "2b", true)]
     public void IsValidMove_FromTile_Positive(string sfen, string _from, string _to, bool expect)
     {
-        GameState state = new(byoyomi: 1, timeControlMin: 1, timeControlSec: 1);
+        GameState state = new();
         GameService service = new();
         service.SetBoardData(state, sfen);
         Tile from = new(_from);
@@ -362,7 +355,7 @@ public class GameServiceTest
     [InlineData("9/9/9/9/9/9/ppppppppp/4+r4/9", "5h", "5g", true)]
     public void IsSamePlayersPiece_Positive(string sfen, string _from, string _to, bool expect)
     {
-        GameState state = new(byoyomi: 1, timeControlMin: 1, timeControlSec: 1);
+        GameState state = new();
         GameService service = new();
         service.SetBoardData(state, sfen);
         Tile from = new(_from);
@@ -382,7 +375,7 @@ public class GameServiceTest
     [Fact]
     public void IsSamePlayersPiece_ThrowsException()
     {
-        GameState state = new(byoyomi: 1, timeControlMin: 1, timeControlSec: 1);
+        GameState state = new();
         GameService service = new();
         service.Init9DimBoardData(state);
 

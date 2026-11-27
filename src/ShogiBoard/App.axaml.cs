@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ShogiBoard.Services;
 using ShogiBoard.ViewModels;
 using ShogiBoard.Views;
+using ShogiBoard.Models;
 
 namespace ShogiBoard;
 
@@ -18,10 +19,16 @@ public partial class App : Application
     public override void OnFrameworkInitializationCompleted()
     {
         var service = new ServiceCollection();
+        service.AddSingleton<GameState>();
+        service.AddSingleton<GameRecordStore>();
+        service.AddSingleton<TimerStore>();
+        service.AddSingleton<UsiCommunication>();
         service.AddTransient<IEngineCommunicationService, EngineCommunicationService>();
         service.AddTransient<IGameService, GameService>();
         service.AddTransient<IDialogService, DialogService>();
+        service.AddTransient<ITimerService, TimerService>();
         service.AddTransient<GameViewModel>();
+        service.AddTransient<PlaybackViewModel>();
         service.AddTransient<MainViewModel>();
 
         var provider = service.BuildServiceProvider();

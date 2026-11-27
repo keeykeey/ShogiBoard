@@ -66,7 +66,7 @@ public partial class UsiParser
         return (string.Empty, null);
     }
 
-    public static int? ExtractScoreOfMove(Stack<string> usiInfos, string move)
+    public static int? ExtractScoreOfMove(IEnumerable<string> usiInfos, string move)
     {
         Dictionary<string, int> pairs = [];
         foreach(var info in usiInfos)
