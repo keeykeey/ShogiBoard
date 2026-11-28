@@ -23,12 +23,14 @@ public partial class App : Application
         service.AddSingleton<GameRecordStore>();
         service.AddSingleton<TimerStore>();
         service.AddSingleton<UsiCommunication>();
+        service.AddSingleton<EngineSettingStore>();
         service.AddTransient<IEngineCommunicationService, EngineCommunicationService>();
         service.AddTransient<IGameService, GameService>();
         service.AddTransient<IDialogService, DialogService>();
         service.AddTransient<ITimerService, TimerService>();
         service.AddTransient<GameViewModel>();
         service.AddTransient<PlaybackViewModel>();
+        service.AddTransient<SettingViewModel>();
         service.AddTransient<MainViewModel>();
 
         var provider = service.BuildServiceProvider();

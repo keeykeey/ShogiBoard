@@ -10,5 +10,8 @@
         x:DataType="vm:MainViewModel"
         WindowStartupLocation="CenterScreen"
         Title="ShogiBoard">
-    <templates:Game DataContext="{Binding GameViewModel}"/>
+        <StackPanel>
+					<templates:Settings DataContext="{Binding SettingViewModel}"/>
+					<templates:Game DataContext="{Binding GameViewModel}"/>
+        </StackPanel>
 </Window>

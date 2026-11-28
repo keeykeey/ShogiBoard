@@ -9,9 +9,34 @@
              x:Class="ShogiBoard.Views.Templates.Game">
             <StackPanel Margin="60, 0, 60, 0">
               <parts:UserOperation />
-              <parts:PieceStandView Pieces="{Binding TopPieceStand}" />
+              <Grid
+                ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto"
+                RowSpacing="4" ColumnSpacing="4"
+              >
+                <parts:PieceStandView
+                  Pieces="{Binding TopPieceStand}"
+                  HorizontalAlignment="Left" VerticalAlignment="Center"
+                  Grid.Row="0" Grid.Column="0"
+                />
+                <parts:TimerViewer
+                  Timer="{Binding TopGameTime}"
+                  HorizontalAlignment="Right" VerticalAlignment="Center"
+                  Grid.Row="0" Grid.Column="2"
+                />
+              </Grid>
               <parts:Board />
-              <parts:PieceStandView Pieces="{Binding BottomPieceStand}" />
+              <Grid>
+                <parts:PieceStandView
+                  Pieces="{Binding BottomPieceStand}"
+                  HorizontalAlignment="Left" VerticalAlignment="Center"
+                  Grid.Row="0" Grid.Column="0"
+                />
+                <parts:TimerViewer
+                  Timer="{Binding BottomGameTime}"
+                  HorizontalAlignment="Right" VerticalAlignment="Center"
+                  Grid.Row="0" Grid.Column="2"
+                />
+              </Grid>
               <parts:Playback DataContext="{Binding PlaybackViewModel}"/>
             </StackPanel>
 </UserControl>

@@ -20,16 +20,23 @@ public partial class GameViewModel : ViewModelBase
     private GameRecordStore GameRecordStore { get; set; }
     public ObservableCollection<BoardRank> Board { get; set; }
     public TimerStore TimerStore { get; set; }
+    private EngineSettingStore EngineSettingStore { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(TopPieceStand), nameof(BottomPieceStand))]
+    [NotifyPropertyChangedFor(nameof(TopPieceStand), nameof(BottomPieceStand), nameof(TopGameTime), nameof(BottomGameTime))]
     public partial bool IsFlipped { get; set; } = false;
 
     public ObservableCollection<PieceOnStand> TopPieceStand    => IsFlipped ? GameState.BlackPieceStand.Data : GameState.WhitePieceStand.Data;
     public ObservableCollection<PieceOnStand> BottomPieceStand => IsFlipped ? GameState.WhitePieceStand.Data : GameState.BlackPieceStand.Data;
 
-    public GameViewModel(PlaybackViewModel playbackViewModel, IEngineCommunicationService ecs, IGameService gs, IDialogService ds, ITimerService timerService, GameState gameState, GameRecordStore gameRecordStore, TimerStore timerStore)
-    {
+    public GameTime TopGameTime => IsFlipped ? TimerStore.BlackTimeLeft : TimerStore.WhiteTimeLeft;
+    public GameTime BottomGameTime => IsFlipped ? TimerStore.WhiteTimeLeft : TimerStore.BlackTimeLeft;
+
+    public GameViewModel(
+        PlaybackViewModel playbackViewModel,
+        IEngineCommunicationService ecs, IGameService gs, IDialogService ds, ITimerService timerService,
+        GameState gameState, GameRecordStore gameRecordStore, TimerStore timerStore, EngineSettingStore engineSettingStore
+    ) {
         PlaybackViewModel = playbackViewModel;
         EngineCommunicator = ecs;
         GameService  = gs;
@@ -41,34 +48,10 @@ public partial class GameViewModel : ViewModelBase
         Board b = GameState.Board;
         Board = [b.A, b.B, b.C, b.D, b.E, b.F, b.G, b.H, b.I];
         TimerStore = timerStore;
+        EngineSettingStore = engineSettingStore;
     }
-
-    private string EnginePath { get; set; } = string.Empty;
 
     private IPosition? MoveFrom { get; set; } = null;
-
-    [RelayCommand]
-    private async Task StartEngine()
-    {
-        if (EnginePath == string.Empty)
-        {
-            await DialogService.ShowMessageAsync(title: "Engine is not selected", message: "Please select engine path", onCloseText: "ok", h: 120, w: 240);
-            return;
-        }
-
-        try
-        {
-            await EngineCommunicator.StartAsync(EnginePath);
-        }
-        catch (TimeoutException e)
-        {
-            await DialogService.ShowMessageAsync(title: "Start engine timeout", message: $"Please check if engine is valid.\nError message: {e.Message}", onCloseText: "ok", h: 120, w: 240);
-        }
-        catch (Exception e)
-        {
-            await DialogService.ShowMessageAsync(title: "Start engine failed", message: $"Error message: {e.Message}", onCloseText: "ok", h: 120, w: 240);
-        }
-    }
 
     [RelayCommand]
     private async Task NewGame()
@@ -80,6 +63,9 @@ public partial class GameViewModel : ViewModelBase
 
             EngineCommunicator.GameDraw();
         }
+
+        bool started = await StartEngine();
+        if (!started) return;
 
         bool playerIsBlack = await DialogService.ShowConfirmAsync(title: "black or white", "Choose black or white", yes: "black", no: "white", h: 120, w: 240);
 
@@ -104,21 +90,14 @@ public partial class GameViewModel : ViewModelBase
         TimerService.StopTimer(timerStore: TimerStore);
         GameState.InAGame = false;
         EngineCommunicator.GameDraw();
+        EngineCommunicator.Quit();
+        ClearMoveFrom();
     }
 
     [RelayCommand]
     private void FlipBoard()
     {
         IsFlipped = !IsFlipped;
-    }
-
-    [RelayCommand]
-    private void QuitEngine()
-    {
-        TimerService.StopTimer(timerStore: TimerStore);
-        EngineCommunicator.Quit();
-        ClearMoveFrom();
-        GameState.InAGame = false;
     }
 
     [RelayCommand]
@@ -137,6 +116,31 @@ public partial class GameViewModel : ViewModelBase
     {
         TimerService.StopTimer(timerStore: TimerStore);
         EngineCommunicator.Kill();
+    }
+
+    private async Task<bool> StartEngine()
+    {
+        if (EngineSettingStore.EnginePath == string.Empty)
+        {
+            await DialogService.ShowMessageAsync(title: "Engine is not selected", message: "Please select engine path", onCloseText: "ok", h: 120, w: 240);
+            return false;
+        }
+
+        try
+        {
+            await EngineCommunicator.StartAsync(EngineSettingStore.EnginePath);
+            return true;
+        }
+        catch (TimeoutException e)
+        {
+            await DialogService.ShowMessageAsync(title: "Start engine timeout", message: $"Please check if engine is valid.\nError message: {e.Message}", onCloseText: "ok", h: 120, w: 240);
+            return false;
+        }
+        catch (Exception e)
+        {
+            await DialogService.ShowMessageAsync(title: "Start engine failed", message: $"Error message: {e.Message}", onCloseText: "ok", h: 120, w: 240);
+            return false;
+        }
     }
 
     public async Task ClickBoard(int col, int row)
@@ -202,11 +206,6 @@ public partial class GameViewModel : ViewModelBase
         if (!GameState.PlayerCanMovePiece) return;
         PieceStandPosition psp = new(piece);
         MoveFrom = psp;
-    }
-
-    public void SetEnginePath(string path)
-    {
-        EnginePath = path;
     }
 
     private void ClearMoveFrom()

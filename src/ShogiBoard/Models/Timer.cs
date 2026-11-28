@@ -5,8 +5,8 @@ using System.Threading;
 namespace ShogiBoard.Models;
 
 public class TimerStore (
-    int byoyomi = 0,
-    int timeControlMin = 0,
+    int byoyomi = 30,
+    int timeControlMin = 10,
     int timeControlSec = 0
 ) {
     public GameTime TimeSetting { get; set; } = new(byoyomi, timeControlMin, timeControlSec);
