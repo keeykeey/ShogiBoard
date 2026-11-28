@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             xmlns:parts="using:ShogiBoard.Views.Parts"
+             xmlns:m="using:ShogiBoard.Models"
+             xmlns:vm="using:ShogiBoard.ViewModels"
+             x:DataType="vm:GameViewModel"
+             Height="24"
+             x:Class="ShogiBoard.Views.Parts.TimerViewer">
+            <Grid
+                ColumnDefinitions="Auto, Auto, Auto, Auto, Auto, Auto" RowDefinitions="Auto"
+                ColumnSpacing="3"
+            >
+              <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding $parent[parts:TimerViewer].Timer.TimeControlMin}"/>
+              <TextBlock Grid.Row="0" Grid.Column="2" Text=":"/>
+              <TextBlock Grid.Row="0" Grid.Column="3" Text="{Binding $parent[parts:TimerViewer].Timer.TimeControlSec}"/>
+              <TextBlock Grid.Row="0" Grid.Column="4" Text=" / "/>
+              <TextBlock Grid.Row="0" Grid.Column="5" Text="{Binding $parent[parts:TimerViewer].Timer.ByoyomiSec}"/>
+            </Grid>
+</UserControl>

@@ -12,9 +12,9 @@
               RowDefinitions="*"
               HorizontalAlignment="Center"
               RowSpacing="0" ColumnSpacing="4">
-              <Button Grid.Row="0" Grid.Column="0" Command="{Binding PlayBackStartCommand}">start</Button>
-              <Button Grid.Row="0" Grid.Column="1" Command="{Binding PlayBackPrevCommand}">prev</Button>
-              <Button Grid.Row="0" Grid.Column="2" Command="{Binding PlayBackNextCommand}">next</Button>
-              <Button Grid.Row="0" Grid.Column="3" Command="{Binding PlayBackLastCommand}">last</Button>
+              <Button Grid.Row="0" Grid.Column="0" Command="{Binding PlayBackStartCommand}">＜＜</Button>
+              <Button Grid.Row="0" Grid.Column="1" Command="{Binding PlayBackPrevCommand}">＜</Button>
+              <Button Grid.Row="0" Grid.Column="2" Command="{Binding PlayBackNextCommand}">＞</Button>
+              <Button Grid.Row="0" Grid.Column="3" Command="{Binding PlayBackLastCommand}">＞＞</Button>
             </Grid>
 </UserControl>
